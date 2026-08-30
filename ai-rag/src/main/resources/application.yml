@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: ai-rag
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${OLLAMA_CHAT_MODEL:llama3.2}
+      embedding:
+        options:
+          model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    openai:
+      api-key: ${OPENAI_API_KEY:not-configured}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:not-configured}
+    pgvector:
+      jdbc-url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/spring_ai_pgvector}
+      username: ${SPRING_DATASOURCE_USERNAME:postgres}
+      password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+      index-type: HNSW
+      dimensions: 768
+
+spring.profiles.default: ollama
+
+---
+spring:
+  config:
+    activate:
+      on-profile: openai
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+      embedding:
+        options:
+          model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: anthropic
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: ${ANTHROPIC_CHAT_MODEL:claude-3-5-haiku-20241022}

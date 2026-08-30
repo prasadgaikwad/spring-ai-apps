@@ -1,0 +1,28 @@
+# Build
+target/
+**/target/
+
+# Local secrets / env overrides (never commit)
+.env
+.env.local
+*.local.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# Local runtime data (DuckDB, uploaded docs)
+*.duckdb
+*.duckdb.wal
+data/
+docs/blog/
+
+# Logs
+*.log
