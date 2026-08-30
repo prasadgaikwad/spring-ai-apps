@@ -1,10 +1,12 @@
 package dev.prasadgaikwad.springaiapps.rag;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,6 +32,9 @@ class AiRagApplicationTests {
 
     @Autowired
     MockMvc mockMvc;
+
+    @MockitoBean
+    VectorStore vectorStore;
 
     @Test
     void contextLoads() {

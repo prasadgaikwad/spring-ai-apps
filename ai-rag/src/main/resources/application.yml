@@ -14,12 +14,20 @@ spring:
       api-key: ${OPENAI_API_KEY:not-configured}
     anthropic:
       api-key: ${ANTHROPIC_API_KEY:not-configured}
-    pgvector:
-      jdbc-url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/spring_ai_pgvector}
-      username: ${SPRING_DATASOURCE_USERNAME:postgres}
-      password: ${SPRING_DATASOURCE_PASSWORD:postgres}
-      index-type: HNSW
-      dimensions: 768
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        index-type: HNSW
+        dimensions: 768
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/spring_ai_pgvector}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    hikari:
+      data-source-properties:
+        stringtype: unspecified
+        currentSchema: public
 
 spring.profiles.default: ollama
 
