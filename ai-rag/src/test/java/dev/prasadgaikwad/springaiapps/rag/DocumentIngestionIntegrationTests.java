@@ -86,4 +86,23 @@ class DocumentIngestionIntegrationTests extends AbstractRagIntegrationTest {
         java.util.Arrays.fill(v, value);
         return v;
     }
+
+    @Test
+    void ingestMarkdownClasspathSampleStoresChunks() throws Exception {
+        stubEmbeddingModel();
+
+        mockMvc.perform(post("/api/rag/ingest")
+                        .contentType("application/json")
+                        .content("{\"source\":\"classpath:samples/rag-overview.md\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"))
+                .andExpect(jsonPath("$.chunks").value(org.hamcrest.Matchers.greaterThan(0)));
+
+        List<Document> stored = vectorStore.similaritySearch(
+                org.springframework.ai.vectorstore.SearchRequest.builder().query("ETL pipeline").topK(10).build());
+
+        assertThat(stored).isNotEmpty();
+        assertThat(stored).allMatch(doc ->
+                doc.getText() != null && doc.getText().contains("Spring AI"));
+    }
 }
