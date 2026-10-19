@@ -5,10 +5,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Placeholder REST surface for the {@code ai-rag} Demo module.
+ * Liveness endpoint for the {@code ai-rag} Demo module.
  *
- * <p>Replaced by the full ingestion and query paths in later work (issues #2 and #3).
- * Exists so the module has a runnable HTTP contract and a smoke-testable endpoint.
+ * <p>The feature surfaces are the ingestion path ({@code POST /api/rag/ingest}) and the
+ * query path ({@code POST /api/rag/query}, plus the {@code /chat} UI); this endpoint
+ * stays as a trivial smoke-probe of the running application.
  */
 @RestController
 @RequestMapping("/api/rag")

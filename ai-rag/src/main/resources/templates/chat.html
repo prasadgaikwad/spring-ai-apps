@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ai-rag chat</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 3rem auto; padding: 0 1rem; color: #1c1c1c; }
+        form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        input[type="text"] { flex: 1; padding: 0.5rem; font-size: 1rem; }
+        button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
+        #answer, #error { padding: 0.75rem; border-radius: 0.25rem; }
+        #answer { background: #f0f6ff; white-space: pre-wrap; }
+        #error { background: #fdecea; color: #8a1f11; }
+        #sources li { margin-bottom: 0.5rem; }
+        #sources code { display: block; font-size: 0.8rem; color: #555; white-space: pre-wrap; }
+        [hidden] { display: none; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>ai-rag chat</h1>
+    <p>Ask a question about the documents ingested through <code>POST /api/rag/ingest</code>.</p>
+
+    <form id="ask-form">
+        <label for="question" class="visually-hidden" hidden>Question</label>
+        <input id="question" name="question" type="text" placeholder="What is Spring AI?" required autofocus>
+        <button type="submit">Ask</button>
+    </form>
+
+    <p id="error" hidden></p>
+
+    <section id="answer-section" hidden>
+        <h2>Answer</h2>
+        <p id="answer"></p>
+        <h2>Sources</h2>
+        <ul id="sources"></ul>
+    </section>
+</main>
+<script>
+    const form = document.getElementById('ask-form');
+    const answerSection = document.getElementById('answer-section');
+    const answerElement = document.getElementById('answer');
+    const sourcesElement = document.getElementById('sources');
+    const errorElement = document.getElementById('error');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        answerSection.hidden = true;
+        errorElement.hidden = true;
+        sourcesElement.replaceChildren();
+        try {
+            const response = await fetch('/api/rag/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: document.getElementById('question').value.trim() })
+            });
+            if (!response.ok) {
+                throw new Error('Query failed with HTTP ' + response.status);
+            }
+            const data = await response.json();
+            answerElement.textContent = data.answer;
+            for (const source of data.sources || []) {
+                const item = document.createElement('li');
+                const snippet = document.createElement('code');
+                snippet.textContent = source.text;
+                item.append(snippet);
+                sourcesElement.append(item);
+            }
+            answerSection.hidden = false;
+        } catch (err) {
+            errorElement.textContent = err instanceof Error ? err.message : String(err);
+            errorElement.hidden = false;
+        }
+    });
+</script>
+</body>
+</html>

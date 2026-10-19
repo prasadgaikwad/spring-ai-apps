@@ -48,6 +48,18 @@ _Avoid_: model choice, LLM choice
 The store embeddings are written to and retrieved from (PGVector via Postgres on Docker). Embeddings are provider-coupled, so the embedding model must match the provider profile.
 _Avoid_: database
 
+**Hybrid search**:
+Retrieval that combines semantic (embedding) search with keyword (full-text) search over the same Vector store, fused by rank rather than raw scores (Reciprocal Rank Fusion), so neither signal alone can starve the other.
+_Avoid_: mixed search
+
+**Rerank**:
+The post-retrieval stage that reorders retrieved chunks by how well each matches the question, before generation. `ai-rag` uses a deterministic lexical re-rank (term coverage), not a learned cross-encoder.
+_Avoid_: reordering
+
+**Grounded answer**:
+A generated answer constrained to the retrieved context: if the context does not contain the answer, the model must say it does not know rather than improvise.
+_Avoid_: hallucination-free answer
+
 **Tool**:
 A client-side function a model may invoke. The agents demo distinguishes plain `Tool`s from MCP-based tools.
 _Avoid_: function, plugin
