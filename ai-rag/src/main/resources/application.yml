@@ -19,6 +19,11 @@ spring:
         initialize-schema: true
         index-type: HNSW
         dimensions: 768
+    rag:
+      retrieval:
+        top-k: 10
+      rerank:
+        max-documents: 5
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/spring_ai_pgvector}
