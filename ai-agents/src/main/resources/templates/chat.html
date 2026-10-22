@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ai-agents chat</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+        textarea, input { width: 100%; box-sizing: border-box; }
+        #log { white-space: pre-wrap; border: 1px solid #ccc; border-radius: 6px; padding: 1rem; min-height: 8rem; margin: 1rem 0; }
+        .q { color: #0a58ca; font-weight: 600; }
+        .a { margin-bottom: 0.75rem; }
+        .err { color: #b02a37; }
+    </style>
+</head>
+<body>
+<h1>ai-agents</h1>
+<p>Ask a question; the agent may call its local tools (add, multiply, convertUnit, daysBetween).</p>
+<input id="question" placeholder="e.g. What is 12 km in miles?"/>
+<button id="send">Send</button>
+<div id="log"></div>
+<script>
+    const log = document.getElementById('log');
+    const question = document.getElementById('question');
+    document.getElementById('send').addEventListener('click', send);
+    question.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+    function send() {
+        const message = question.value.trim();
+        if (!message) return;
+        append('q', 'You: ' + message);
+        question.value = '';
+        fetch('/api/agents/ask', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message})
+        }).then(r => r.json())
+          .then(data => append('a', 'Agent: ' + (data.answer ?? JSON.stringify(data))))
+          .catch(err => append('err', 'Error: ' + err));
+    }
+
+    function append(kind, text) {
+        const div = document.createElement('div');
+        div.className = kind;
+        div.textContent = text;
+        log.appendChild(div);
+    }
+</script>
+</body>
+</html>
