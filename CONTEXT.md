@@ -67,3 +67,6 @@ _Avoid_: function, plugin
 **Eval harness**:
 The in-app mechanism that runs evaluation over a set of Q&A pairs and produces a regression-style report.
 _Avoid_: evaluator, grader
+
+**Criterion**:
+One named expectation a Q&A pair is graded against — required text, forbidden text (the hallucination guard), a pattern, or a custom rule — stated in words so report entries read standalone.
