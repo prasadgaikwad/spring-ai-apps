@@ -22,6 +22,17 @@ class AiEvalApplicationTests {
     @Autowired
     MockMvc mockMvc;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean(name = "ollamaChatModel")
+    org.springframework.ai.chat.model.ChatModel chatModel;
+
+    @org.junit.jupiter.api.BeforeEach
+    void stubChatModel() {
+        org.mockito.Mockito.when(chatModel.getOptions()).thenReturn(org.springframework.ai.chat.prompt.ChatOptions.builder().build());
+        org.mockito.Mockito.when(chatModel.call(org.mockito.ArgumentMatchers.any(org.springframework.ai.chat.prompt.Prompt.class)))
+                .thenReturn(new org.springframework.ai.chat.model.ChatResponse(java.util.List.of(new org.springframework.ai.chat.model.Generation(
+                        new org.springframework.ai.chat.messages.AssistantMessage("ok")))));
+    }
+
     @Test
     void contextLoads() {
     }
