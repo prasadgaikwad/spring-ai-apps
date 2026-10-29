@@ -16,7 +16,24 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,httptrace
+        include: health,info,metrics,traces
+  observations:
+    key-values:
+      service: ai-observability
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+trace:
+  duckdb:
+    url: jdbc:duckdb:./data/ai-observability-traces.duckdb
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 
 spring.profiles.default: ollama
 
