@@ -27,6 +27,7 @@
         <module>ai-observability</module>
         <module>ai-multimodal</module>
         <module>ai-structured</module>
+        <module>ai-decision</module>
     </modules>
 
     <properties>
