@@ -62,6 +62,18 @@ _Avoid_: hallucination-free answer
 
 **Tool**:
 A client-side function a model may invoke. The agents demo distinguishes plain `Tool`s from MCP-based tools.
+
+**Decision model**:
+A model (e.g. System One / Jev by TypeSafe AI) that evaluates state and returns typed decisions (Choice, Score, Noul) with calibrated probabilities, rather than generating free-form text.
+
+**Choice**:
+A decision primitive selecting one option from provided choices with a calibrated probability.
+
+**Score**:
+A decision primitive returning a numeric score with calibrated probability/uncertainty.
+
+**Noul**:
+A decision primitive indicating no valid choice applies (null/none) with a calibrated probability.
 _Avoid_: function, plugin
 
 **Eval harness**:
