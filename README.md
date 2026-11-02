@@ -13,6 +13,7 @@ A multi-module Maven monorepo of production-grade Spring AI reference demos show
 | [`ai-observability`](ai-observability/README.md) | All-local DuckDB trace sink consuming Spring AI Micrometer observations with query endpoints. |
 | [`ai-multimodal`](ai-multimodal/README.md) | All four modalities: image generation, vision, text-to-speech, and audio transcription. |
 | [`ai-structured`](ai-structured/README.md) | Typed extraction to validated POJOs using Spring AI structured output and Bean Validation. |
+| [`ai-decision`](ai-decision/README.md) | System One/Jev-style typed decisions (Choice, Score, Noul) with calibrated probabilities. |
 
 ## Quick Start
 
