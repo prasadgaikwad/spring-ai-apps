@@ -4,6 +4,8 @@ Working notes from building the first ticket (parent POM + `ai-common` + six dem
 skeletons) on `spring-ai-apps`. These are the non-obvious, hard-won facts that cost
 real debugging time and would otherwise trip up the next engineer.
 
+**Historical scope:** these notes describe the first six-demo scaffold. There are now seven implemented Demo modules. For current code-specific constraints and coverage, read [implementation learnings](implementation-learnings.md) and [architecture](../architecture.md). The startup lessons below apply to the provider starters included by the affected module, not to every possible Spring AI capability/provider.
+
 ## 1. Java package names forbid hyphens — the module name and package differ
 
 The Maven root package we wanted, `dev.prasadgaikwad.spring-ai-apps`, is **illegal in
@@ -13,7 +15,7 @@ sits in the `package` declaration.
 
 Resolution: the **Java root package is `dev.prasadgaikwad.springaiapps.*`**, while the
 Maven `groupId`/`artifactId` and repo name stay `spring-ai-apps`. This split is easy
-to reintroduce by accident, so it's recorded in both `CONTEXT.md` and `AGENTS.md`.
+to reintroduce by accident, so the namespace is recorded in `AGENTS.md` and the architecture guide.
 
 ## 2. Where MockMvc moved in Spring Boot 4.1
 
@@ -32,11 +34,11 @@ does not exist` at test-compile.
 ## 3. Spring AI 2.0 auto-configures model beans unconditionally
 
 When the OpenAI or Anthropic **starter** is on the classpath, Spring AI auto-creates
-**all** of that provider's model beans (chat, image, audio speech, audio transcription,
-embedding) — even under the `ollama` profile where they're unused. With no `api-key`
+the model beans enabled by that starter/configuration (including chat and, for supported
+providers such as OpenAI, image/audio/embedding) — even under the `ollama` profile where they're unused. With no `api-key`
 set, context-load fails with `At least one credential source must be specified`.
 
-We wired all three provider starters (per the "provider-agnostic" goal), so every demo
+The original six demos wire all three provider starters (per the "provider-agnostic" goal), so each of those demos
 defines **non-empty placeholder keys in the base config**:
 
 ```yaml
@@ -47,6 +49,7 @@ anthropic:
 ```
 
 Real keys override via env when running the `openai` / `anthropic` profiles.
+An explicitly empty environment variable can override the placeholder and still break startup. `ai-decision` does not include these cloud starters.
 
 ## 4. `ai-common` must not force the PGVector starter on every demo
 
@@ -54,8 +57,8 @@ Putting `spring-ai-starter-vector-store-pgvector` in `ai-common` makes **every**
 even ones with no Vector store, require a DataSource + JDBC driver. The failure is
 `Failed to determine a suitable driver class` on context-load.
 
-Rule: `ai-common` owns the **shared code** (Vector store config, Eval harness, prompt
-templates, REST error handling) but **not** the heavy PGVector starter. A demo that
+Rule: `ai-common` owns the **shared code** (Vector store aliases, Eval harness,
+REST error handling) but **not** the heavy PGVector starter. A demo that
 actually uses a Vector store (`ai-rag`) declares the starter itself. Documented in
 ADR-0002.
 
@@ -73,7 +76,8 @@ excludes the DB-dependent autoconfigurations so it can load without a running Po
 ```
 
 The real Vector store integration is covered by the ETL/query work (issues #2/#3)
-against a running Postgres.
+against a PGVector Testcontainer. These tests need Docker and provision their own Postgres;
+the manually started Compose database is not used. Smoke tests additionally mock pipeline services and do not validate retrieval.
 
 ## 6. POM XML gotcha: escape `&` in descriptions
 
@@ -82,6 +86,10 @@ fails the parent read with `Non-parseable POM ... entity reference name can not 
 character '`. Use `&amp;`.
 
 ## 7. Running a single module needs `-am`
+
+This heading refers to reactor **build/test** goals. To run Boot, first install shared
+prerequisites with `mvn -pl ai-common -am install -DskipTests`, then use
+`mvn -pl ai-rag spring-boot:run`; avoid applying the run goal to the parent/shared reactor.
 
 `mvn -pl ai-rag test` fails with `Could not find artifact ... ai-common` unless ai-common
 is installed to the local repo. Use `-pl ai-rag -am` to build prereqs in-reactor.

@@ -1,7 +1,26 @@
-# Monorepo with a shared `ai-common` deep module
+# ADR 0002: Maven monorepo with a shared ai-common module
 
-The project is a single Maven monorepo with one shared module (`ai-common`) and six runnable Demo modules, all pinning Spring Boot 4.1 + Spring AI 2.0 through the parent. `ai-common` owns the plumbing shared across demos: Vector store config, the Eval harness, prompt templates, common REST, and error handling.
+## Status
 
-This was chosen over fully standalone sample apps: six demos share too much real plumbing (vector store wiring, eval, prompts, REST conventions) to copy-paste. A shared module keeps the demos thin and the reference code DRY, at the cost of a demo no longer being self-contained to read in isolation — an acceptable trade for a reference library whose goal is cross-demo consistency. Observability config stays isolated in the `ai-observability` demo rather than in `ai-common`.
+Accepted. Originally six demos; `ai-decision` subsequently added as the seventh.
 
-A deliberate sub-decision: `ai-common` holds the *shared code* for Vector store config, but the heavy `spring-ai-starter-vector-store-pgvector` dependency is deliberately **not** declared in `ai-common`. Adding it there leaks a mandatory DataSource/JDBC driver onto every Demo module and breaks context-load in modules that don't use a Vector store. A Demo that actually needs a Vector store (`ai-rag`, and any future one) declares the PGVector starter itself and reuses ai-common's config code.
+## Context and decision
+
+Use one parent Maven reactor to pin Boot 4.1.1, Spring AI 2.0.1, and Java 25 for `ai-common` and the seven independent Demo applications. Shared configuration, error contracts, and the deterministic Eval harness live in `ai-common`. This is preferred to standalone repositories or repeated plumbing in each demo: the reference collection benefits from consistent contracts, at the cost of requiring readers and builds to navigate the shared dependency.
+
+Each demo declares its use-case dependencies. `ai-common` currently includes web infrastructure and the Ollama starter; it does not contain every provider starter. Shared prompt templates remain an original scope item rather than a delivered library. The Java namespace is `dev.prasadgaikwad.springaiapps.*`, while Maven coordinates retain `spring-ai-apps`.
+
+## Dependency locality
+
+Keep `spring-ai-starter-vector-store-pgvector` only in `ai-rag`, which needs the DataSource. Putting it in `ai-common` imposed JDBC auto-configuration on unrelated demos and broke their startup. Shared embedding alias code is conditional on the Vector store API being present.
+
+Keep DuckDB dependencies, configuration, schema, handler, and queries only in `ai-observability`. These demos are separately launched processes; a shared module must not silently install the sink everywhere. Decision-specific DTOs and adapter code remain in `ai-decision` until a genuine shared consumer warrants extraction.
+
+## Consequences and references
+
+- Build/tests can use `-pl <module> -am`; run goals target executable modules after installing shared prerequisites.
+- Component scanning must include the shared package; sharing a dependency alone is insufficient.
+- Only RAG and agents have Thymeleaf UIs; other demos expose REST/OpenAPI. Ping remains alongside implemented features.
+- A shared configuration change has multiple consumers and needs reactor-level verification.
+
+See [architecture](../architecture.md), [ADR-0004](0004-eval-harness-in-ai-common.md), and [ADR-0005](0005-all-local-observability-in-ai-observability-only.md).
