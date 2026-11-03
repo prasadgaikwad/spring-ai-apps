@@ -1,5 +1,22 @@
 # Spring AI Apps — Core Monorepo & ai-rag Reference Spec
 
+## Document status and implementation follow-through
+
+This is the **original foundation specification**, retained to preserve its user stories and settled decisions. References below to an empty repository, six skeletons, future demos, or initial test scope describe the starting milestone, not today's implementation. Issues #2–#6, #13, and #20 subsequently delivered feature implementations and documentation. The parent now builds `ai-common` plus **seven** runnable Demo modules, including `ai-decision`.
+
+| Original scope | Current implementation | Current guide |
+| --- | --- | --- |
+| Shared foundation and Eval harness | Profile aliases, common errors, deterministic criteria/reports/regressions; no shared prompt-template library yet | [ai-common](../ai-common/README.md) |
+| RAG ETL/query | Text ingestion, deterministic chunk IDs, hybrid RRF retrieval, lexical rerank, advisor grounding, source responses, `/chat` | [ai-rag](../ai-rag/README.md) |
+| Agents | Local calculator tools, MCP server definitions and optional callback seam, `/chat`; server disabled and no client starter/connection supplied by default | [ai-agents](../ai-agents/README.md) |
+| Evaluation | Optional answer generation, deterministic grading, positional case IDs, process-local history | [ai-eval](../ai-eval/README.md) |
+| Observability | Module-local DuckDB capture and REST queries; automatic correlation and timing are simplified | [ai-observability](../ai-observability/README.md) |
+| Multimodal | Four REST flows; model capabilities/credentials vary independently of chat profile | [ai-multimodal](../ai-multimodal/README.md) |
+| Structured output | Candidate/order extraction, Jakarta validation, invalid structured values returned with violations | [ai-structured](../ai-structured/README.md) |
+| Later addition: decisions (#13) | Typed DTOs, DecisionClient and Jev HTTP adapter; upstream contract/mapping not tested | [ai-decision](../ai-decision/README.md) |
+
+The original provider-portability goal has capability-specific qualifications: Anthropic has no shared primary embedding alias, OpenAI embeddings need compatible vector dimensions, and media beans do not switch solely through ChatModel aliases. `ai-decision` is configured independently. The observation sink is an in-process observation handler, not a cross-demo tracing collector. Default test coverage includes more than skeleton smoke tests, but does not establish live-provider interoperability. See the [current architecture and coverage map](architecture.md), [ADR index](adr/README.md), and [implementation learnings](learnings/implementation-learnings.md) for delivered behavior and limitations. Later issues extend the original out-of-scope list below; they do not retroactively change the initial milestone.
+
 ## Problem Statement
 
 As an AI engineering team, we want a set of production-grade reference applications that showcase the hardest, most common AI-engineering use cases with Spring Boot + Spring AI — so we don't have to re-derive the "hard" wiring (RAG ETL, agentic tooling, evaluation, observability, multimodal, structured output) from scratch each time. Today we have nothing: the repo is an empty scaffolding with no runnable reference, no shared plumbing, and no settled architecture for how the demos should hang together.

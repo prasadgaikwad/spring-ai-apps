@@ -1,54 +1,45 @@
 # AGENTS.md
 
-Multi-module Maven monorepo of production-grade Spring AI reference demos. The scaffold from the first ticket (parent POM + `ai-common` + six demo skeletons) is committed; the six demos are still placeholders (REST ping endpoints only). Read the design docs before writing feature code — they are the authoritative source.
+Maven monorepo with `ai-common` and seven implemented Demo modules. Read the domain and architecture documents before changing feature behavior.
 
-## Authoritative docs (read first)
+## Read for the task
 
-- `CONTEXT.md` — the domain glossary. Use its vocabulary verbatim (e.g. *Demo module*, *ai-common*, *Provider choice*, *Vector store*, *Tool*, *Eval harness*).
-- `docs/0001-spring-ai-apps-core-and-ai-rag-spec.md` — the feature spec (modules, decisions, testing seams, user stories).
-- `docs/adr/0001-provider-portability-profiles-ollama-default.md` and `docs/adr/0002-monorepo-shared-ai-common-module.md` — settled trade-offs you must not "fix".
+- `CONTEXT.md`: canonical domain vocabulary.
+- `docs/0001-spring-ai-apps-core-and-ai-rag-spec.md`: original scope plus current implementation-status notes; distinguish the original plan from delivered behavior.
+- `docs/architecture.md` and the affected module's `README.md`: current API contracts, flow diagrams, configuration, and known implementation gaps.
+- `docs/adr/README.md`: index of settled decisions; consult relevant records before changing boundaries.
+- `docs/learnings/implementation-learnings.md`: module-specific gotchas and testing limitations. For Boot/model auto-configuration failures, also read `docs/learnings/scaffold-spring-ai-2-monorepo.md`.
 
-## Build & run
+## Build and run
 
-- Java 25 (Temurin) + Maven 3.9 present.
-- `mvn -DskipTests compile` — compiles the whole monorepo green.
-- `mvn test` — runs every demo's `@SpringBootTest` smoke test. All green by default (see gotchas below for why).
-- Running a single demo with `-pl ai-rag -am` (`-am` builds `ai-common` in-reactor; without it you'll get "Could not find artifact ai-common").
-- Postgres/PGVector: `docker compose up -d` (top-level compose).
-- Copy `.env.example` to a git-ignored local env and set real keys; never commit real keys.
+- Java 25, Maven 3.9+. `mvn -DskipTests compile`; `mvn test` for the reactor.
+- RAG integration tests require Docker and provision their own PGVector container; they do not use the manually started Compose database. Other default tests use mocks/local infrastructure.
+- For selected builds/tests use `mvn -pl ai-rag -am test` (substitute module). `-am` builds prerequisites in-reactor.
+- To run a demo, first `mvn -pl ai-common -am install -DskipTests`, then `mvn -pl ai-rag spring-boot:run`. Apply Boot run only to the executable module, not the parent/shared reactor.
+- `docker compose up -d` starts the local RAG database. Each Demo module defaults to port 8080; override `server.port` for concurrent processes.
+- `.env.example` documents keys/defaults. Export needed variables into the JVM environment; Maven/Boot do not automatically load `.env`. Keep real keys in ignored local configuration.
 
-## Settled architecture (do not re-derive)
+## Architecture guardrails
 
-- **Build**: Maven monorepo; parent POM is `spring-boot-starter-parent` 4.1.1 + imports `spring-ai-bom` 2.0.1.
-- **Java/toolchain**: Java 25. **Root package is `dev.prasadgaikwad.springaiapps.*`** (Java forbids hyphens — the Maven groupId/artifactId remain `spring-ai-apps`, not the package).
-- **Modules**: shared `ai-common` + six demos `ai-rag`, `ai-agents`, `ai-eval`, `ai-observability`, `ai-multimodal`, `ai-structured`. Don't add/rename casually.
-- **Provider portability**: a demo targets one provider via `spring.profiles.active`; Ollama is the zero-key default, `openai`/`anthropic` are documented alternatives. Keys come from `.env.example` + `${KEY}` placeholders.
-- **Vector store**: PGVector via Postgres on Docker. Embeddings are provider-coupled — switching a Vector-store-backed demo's profile requires re-ingestion (ADR-0001).
-- **Observability**: the all-local DuckDB trace sink + query endpoints live **only** in `ai-observability`; other demos use Spring Boot's auto-configured tracing.
+- Parent pins Boot 4.1.1, Spring AI 2.0.1, Java 25. Java root package: `dev.prasadgaikwad.springaiapps.*`; Maven coordinates retain `spring-ai-apps`.
+- Modules: `ai-common`, `ai-rag`, `ai-agents`, `ai-eval`, `ai-observability`, `ai-multimodal`, `ai-structured`, `ai-decision`.
+- `ai-common` owns shared configuration/errors and the pure Eval harness. PGVector starter stays in `ai-rag`; DuckDB sink/configuration stays in `ai-observability`.
+- Six Spring AI demos default to `ollama` and define `openai`/`anthropic` chat profiles. `ai-decision` uses `ai.decision.*` and one Jev adapter; its `provider` property does not select beans.
+- Chat profile selection uses `@Primary` aliases; this does not disable other provider beans or select all media capabilities. Embedding aliases exist for Ollama/OpenAI, not Anthropic. Preserve stored/query embedding compatibility and rebuild/re-ingest on incompatible model/dimension changes.
+- Only `ai-rag` and `ai-agents` have Thymeleaf pages. All seven expose REST and OpenAPI; ping endpoints remain alongside features.
 
-## Hard-earned gotchas (agent would otherwise fight these for hours)
+## Testing and learned constraints
 
-- **`spring-ai-starter-vector-store-pgvector` is NOT in `ai-common`.** It lives only in `ai-rag`. Keeping it in `ai-common` leaked a mandatory DataSource into every demo and broke all context-loads ("Failed to determine a suitable driver class"). `ai-common` holds the *shared code* for Vector store config, not the heavy starter.
-- **Spring AI 2.0 auto-configures ALL OpenAI/Anthropic model beans (chat, image, audio, transcription) unconditionally** when those starters are on the classpath, and fails context-load if there's no API key. Every demo therefore defines non-empty placeholder keys in its base config: `openai.api-key: ${OPENAI_API_KEY:not-configured}` and `anthropic.api-key: ${ANTHROPIC_API_KEY:not-configured}`. Real keys override via env for the cloud profiles.
-- **Boot 4 moved MockMvc test support** out of `spring-boot-starter-test` into a new artifact **`spring-boot-webmvc-test`** (added once, test-scoped, in the parent POM). And `AutoConfigureMockMvc` moved to package **`org.springframework.boot.webmvc.test.autoconfigure`** (NOT `...test.autoconfigure.web.servlet`). Both are Boot 4.1 changes you'd otherwise miss.
-- **ai-rag's smoke test excludes the DB autoconfigs** (`PgVectorStoreAutoConfiguration`, `DataSourceAutoConfiguration`) so the skeleton loads without a running Postgres. The real Vector store integration is tested in the ETL/query work (issues #2/#3).
-
-## Conventions you'd otherwise guess wrong
-
-- **UI surface**: only `ai-agents` and `ai-rag` get a minimal Thymeleaf UI (chosen in the spec). All other demos are REST + OpenAPI only.
-- **Testing seams**: primary seam is one `@SpringBootTest` per Demo module driven through the public REST contract (deterministic via a pointed/mocked ChatModel); the only focused unit-test seam is the `ai-common` Eval harness (pure logic). UI pages get context-load smoke tests only. Test externally-observable behavior, not orchestration internals.
-- **Scaffold controllers**: each demo has a placeholder `*ScaffoldController` with a `GET /api/<module>/ping` and a `PingResponse` record. Feature work replaces these per-spec.
+- Primary seam: public REST behavior through `@SpringBootTest` + MockMvc, deterministic model mocks. Keep the Eval harness's focused pure-logic unit seam; existing tool/record tests also verify local contracts.
+- Boot 4 MockMvc support is parent test dependency `spring-boot-webmvc-test`; annotation package `org.springframework.boot.webmvc.test.autoconfigure`.
+- For a mocked ChatModel use `@MockitoBean` with the provider bean name and stub `getOptions()` when constructing ChatClients. See the affected module's integration tests.
+- The configured cloud starters can create unused beans at startup. Six demos use non-empty placeholder keys in base YAML; empty exported values can defeat these placeholders. `ai-decision` does not include those cloud starters.
+- RAG smoke tests exclude database auto-configuration and mock services; PGVector integration tests exercise the real database separately. Do not describe a smoke-test pass as retrieval validation.
+- `ai-decision` currently tests context/ping/empty input and DTOs, not upstream HTTP mapping. The observation sink uses names as trace IDs and stop-time timestamps; describe these limitations accurately.
 
 ## Workflow
 
-- Track work as GitHub issues on `prasadgaikwad/spring-ai-apps` (the `ready-for-agent` label marks specified, seam-agreed tickets). Implement per-spec/issues, not ad hoc.
-- Before editing glossary/ADRs, honor the existing decisions; update `CONTEXT.md` inline as new terms resolve.
-
-## Learnings (accumulated)
-
-- **Spring AI 2.0 + Boot 4**: Auto-configures OpenAI/Anthropic model beans unconditionally when starters present; use placeholder keys in base config and mark profile ChatModel `@Primary`.
-- **MockMvc Boot 4**: Use `spring-boot-webmvc-test` and `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`.
-- **ai-common constraints**: No `spring-ai-starter-vector-store-pgvector` in ai-common (leaks DataSource); PGVector starter only in modules that need it (ai-rag).
-- **Observability isolation**: DuckDB trace sink/handlers only in `ai-observability`.
-- **Eval harness**: Pure logic in `ai-common.common.eval`, repo vocabulary uses Criterion/Grade/EvalHarness (not evaluator/grader).
-- **Provider coupling**: Embeddings coupled to provider profile; re-ingestion required on provider switch for vector stores.
+- Track work on `prasadgaikwad/spring-ai-apps`; `ready-for-agent` identifies specified tickets. Preserve original issue acceptance criteria when recording progress.
+- Follow the existing naming/style and relevant ADRs. Keep glossary definitions separate from implementation details.
+- For documentation changes, cross-check routes, fields, property defaults, test seams, and diagrams against source. Distinguish intended design, verified application behavior, and unverified external-provider behavior.
+- Before changing shared configuration, review all consuming modules. Before editing environment samples, compare against the base branch and preserve unrelated entries.

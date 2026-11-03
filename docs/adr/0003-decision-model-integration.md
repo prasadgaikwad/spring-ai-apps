@@ -1,30 +1,23 @@
-# ADR 0003: Decision Model Integration (System One/Jev)
+# ADR 0003: A separate typed-decision client boundary
 
 ## Status
-Accepted
 
-## Context
-The repo adds `ai-decision` to demonstrate typed decision models (e.g. TypeSafe AI's Jev / System One) that return structured answers with calibrated probabilities rather than free-form text. We need a design consistent with:
-- Monorepo structure (Maven modules, `ai-common` shared, provider portability)
-- Spring AI 2.0 patterns and Boot 4
-- Testing seams (mocked external calls, no mandatory DB for skeleton)
-- Observability separation (tracing stays in `ai-observability`)
+Accepted for the module/client boundary. Vendor protocol assumptions remain unverified by upstream tests.
 
-## Decision
-1. **Separate decision models from chat models.** Decision models are not ChatModels; they are a distinct capability (typed primitives) and must not be forced into the ChatModel abstraction.
-2. **Pluggable interface first.** Define `DecisionClient` with `JevDecisionClient` implementation now (vendor-specific), keeping the door open for local/mock providers later.
-3. **Typed primitives.** Support `Choice`, `Score`, and `Noul` as first-class DTOs (`DecisionPrimitives`) with calibrated probabilities/uncertainty.
-4. **HTTP adapter.** Use Spring WebClient for HTTP calls; configuration via `DecisionProperties` (base URL, API key, model, timeout). Keys read from env with fallbacks.
-5. **Demo module placement.** Add `ai-decision` as a new demo module (like others), REST + OpenAPI, no Thymeleaf UI unless justified later.
-6. **Testing.** Default tests use mocked clients/HTTP or in-memory behavior; no external network dependencies. Context-load smoke tests follow repo patterns.
-7. **Docs/glossary.** Update `CONTEXT.md` with Decision model, Choice, Score, Noul.
+## Context and decision
 
-## Consequences
-- Clear separation of concerns from LLM chat flows
-- Easy to mock in tests and swap providers
-- Consistent with existing module patterns
-- Minimal surface area; can evolve to full provider abstraction if multiple vendors are added
+Issue #13 / PR #24 introduced `ai-decision` for state-and-question based decisions. Keep this distinct from Spring AI `ChatModel`: a decision has typed Choice, Score, or Noul answer fields, not a free-text completion. Define `DecisionClient` in the Demo module and implement the current HTTP integration in `JevDecisionClient`. This provides a narrow extension seam without inventing a broad multi-provider framework before a second provider exists.
 
-## References
-- Issue #13, PR #24
-- `ai-decision/` module
+Use `DecisionProperties` and WebClient for base URL, key, model, and timeout. The controller depends on `DecisionClient`; decision DTOs stay in `DecisionPrimitives`. This chooses explicit domain records and adapter mapping over pretending the endpoint is an OpenAI-compatible chat model or moving vendor-specific types into shared configuration.
+
+## Implementation qualifications
+
+- Only one client component exists. `ai.decision.provider` does not select beans; adding providers requires explicit bean-selection wiring.
+- `/v1/systemone`, default endpoint/model, and answer-field aliases are current adapter assumptions. Neither successful upstream HTTP mapping nor probability calibration is established by the existing tests.
+- Local Noul means a null/none answer with reason/probability. Its external-provider semantics require confirmation.
+- Default tests cover startup, ping, empty questions, and DTO construction. Earlier descriptions of mocked HTTP/mapping tests overstated coverage.
+- Answer parsing is permissive (including probability default 1.0); validation, retries, and provider-specific error mapping remain gaps, not accepted guarantees.
+
+## Consequences and references
+
+Decision callers avoid chat-specific coupling and future implementations have a clear seam. The interface alone does not deliver provider portability or a verified vendor contract. The [module guide](../../ai-decision/README.md) documents the exact request/parser behavior and current limits. Follow [ADR-0002](0002-monorepo-shared-ai-common-module.md) for module placement and shared dependency boundaries.
