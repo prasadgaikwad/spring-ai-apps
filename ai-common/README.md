@@ -26,3 +26,21 @@ Add as a dependency:
     <version>${project.version}</version>
 </dependency>
 ```
+
+## Eval Harness
+
+Pure-logic evaluation (no framework dependencies beyond Spring Assert). See ADR-0004.
+
+### Quick Example
+
+```java
+var report = new EvalHarness().run(List.of(
+  new EvalCase("q1", "What is Spring AI?", "Spring AI is...")),
+  List.of(Criterion.contains("spring-ai", "Mentions Spring AI"))
+);
+```
+
+### Key Concepts
+- `EvalCase(id, question, answer)`, `Criterion`, `Grade`, `CaseReport`, `EvalReport`/`Summary`
+- Factories: `contains`, `excludes`, `matchesRegex`, `equalsText`
+- `regressionsAgainst(baseline)` finds pass→fail

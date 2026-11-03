@@ -22,3 +22,20 @@ Agentic demo showcasing tool calling and MCP integration with a chat UI.
 ```bash
 mvn -pl ai-agents -am spring-boot:run
 ```
+
+## Architecture
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant C as AgentsController
+  participant AC as Agent/ChatClient
+  participant T as @Tool
+  participant M as MCP Server/Client
+  U->>C: POST /api/agents/chat
+  C->>AC: call with tools
+  AC->>T: invoke tool(s)
+  AC->>M: invoke MCP tool(s)
+  AC-->>C: response
+  C-->>U: answer
+```

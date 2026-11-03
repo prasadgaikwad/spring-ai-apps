@@ -28,3 +28,15 @@ mvn -pl ai-rag -am spring-boot:run
 ## Testing
 
 Integration tests use Testcontainers with PGVector and mocked Chat/Embedding models to exercise the full pipeline deterministically.
+
+## Architecture (high level)
+
+```mermaid
+flowchart LR
+  UI[Thymeleaf /chat] --> C[RagController]
+  C --> RA[RetrievalAugmentationAdvisor]
+  RA --> VS[(PGVector)]
+  RA --> FTS[(Postgres FTS)]
+  RA --> RR[LexicalReranker]
+  RR --> LLM[(ChatModel)]
+```

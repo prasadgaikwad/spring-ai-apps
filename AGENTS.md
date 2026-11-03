@@ -43,3 +43,12 @@ Multi-module Maven monorepo of production-grade Spring AI reference demos. The s
 
 - Track work as GitHub issues on `prasadgaikwad/spring-ai-apps` (the `ready-for-agent` label marks specified, seam-agreed tickets). Implement per-spec/issues, not ad hoc.
 - Before editing glossary/ADRs, honor the existing decisions; update `CONTEXT.md` inline as new terms resolve.
+
+## Learnings (accumulated)
+
+- **Spring AI 2.0 + Boot 4**: Auto-configures OpenAI/Anthropic model beans unconditionally when starters present; use placeholder keys in base config and mark profile ChatModel `@Primary`.
+- **MockMvc Boot 4**: Use `spring-boot-webmvc-test` and `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`.
+- **ai-common constraints**: No `spring-ai-starter-vector-store-pgvector` in ai-common (leaks DataSource); PGVector starter only in modules that need it (ai-rag).
+- **Observability isolation**: DuckDB trace sink/handlers only in `ai-observability`.
+- **Eval harness**: Pure logic in `ai-common.common.eval`, repo vocabulary uses Criterion/Grade/EvalHarness (not evaluator/grader).
+- **Provider coupling**: Embeddings coupled to provider profile; re-ingestion required on provider switch for vector stores.

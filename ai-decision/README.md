@@ -46,3 +46,21 @@ mvn -pl ai-decision -am spring-boot:run
 
 - Default tests use mocked HTTP calls; no external network calls required.
 - Local/offline implementations can be added via additional `DecisionClient` beans.
+
+## Architecture
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant D as DecisionController
+  participant C as DecisionClient
+  participant J as JevDecisionClient
+  participant API as Jev/SystemOne API
+  U->>D: POST /api/decision/decide
+  D->>C: decide(state, questions)
+  C->>J: decide(...)
+  J->>API: POST /v1/systemone
+  API-->>J: typed answers
+  J-->>D: DecisionResponse
+  D-->>U: Choice/Score/Noul
+```

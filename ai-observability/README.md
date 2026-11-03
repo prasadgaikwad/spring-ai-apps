@@ -20,3 +20,12 @@ All-local observability with DuckDB trace sink and Micrometer observation captur
 ```bash
 mvn -pl ai-observability -am spring-boot:run
 ```
+
+## Architecture
+
+```mermaid
+flowchart TD
+  Obs[Spring AI Observations] --> H[DuckDbObservationHandler]
+  H --> DB[(DuckDB ./data/observability/traces.duckdb)]
+  API[REST API] --> DB
+```
