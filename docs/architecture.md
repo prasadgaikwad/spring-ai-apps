@@ -56,7 +56,7 @@ flowchart BT
     C --> Ollama[Ollama model starter + web infrastructure]
 ```
 
-The parent pins Boot 4.1.1, Spring AI 2.0.1, Java 25, Springdoc 3.1.1, and Testcontainers 2.0.3. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`.
+The parent pins Boot 4.1.2, Spring AI 2.0.2, Java 25, Springdoc 3.2.0, and Testcontainers 2.0.3. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`.
 
 Shared code is configuration/error translation and `common.eval`, not a shared persistence or business-service layer. Six Spring AI demos declare cloud starters; `ai-decision` uses WebClient and separate configuration. Shared configuration is discovered through the demo's component scan. No shared prompt-template library currently exists despite the original intended scope.
 
