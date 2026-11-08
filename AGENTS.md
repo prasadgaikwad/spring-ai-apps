@@ -21,7 +21,7 @@ Maven monorepo with `ai-common` and seven implemented Demo modules. Read the dom
 
 ## Architecture guardrails
 
-- Parent pins Boot 4.1.1, Spring AI 2.0.1, Java 25. Java root package: `dev.prasadgaikwad.springaiapps.*`; Maven coordinates retain `spring-ai-apps`.
+- Parent pins Boot 4.1.2, Spring AI 2.0.2, Java 25. Java root package: `dev.prasadgaikwad.springaiapps.*`; Maven coordinates retain `spring-ai-apps`.
 - Modules: `ai-common`, `ai-rag`, `ai-agents`, `ai-eval`, `ai-observability`, `ai-multimodal`, `ai-structured`, `ai-decision`.
 - `ai-common` owns shared configuration/errors and the pure Eval harness. PGVector starter stays in `ai-rag`; DuckDB sink/configuration stays in `ai-observability`.
 - Six Spring AI demos default to `ollama` and define `openai`/`anthropic` chat profiles. `ai-decision` uses `ai.decision.*` and one Jev adapter; its `provider` property does not select beans.

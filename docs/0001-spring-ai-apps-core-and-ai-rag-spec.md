@@ -23,13 +23,13 @@ As an AI engineering team, we want a set of production-grade reference applicati
 
 ## Solution
 
-A multi-module Maven monorepo (`spring-ai-apps`) pinning Spring Boot 4.1 + Spring AI 2.0, targeting Java 25, with one shared `ai-common` module and six runnable Demo modules. Demos are provider-agnostic via `spring.profiles.active`, defaulting to local Ollama (zero-key). We build the foundation plus the first, flagship demo — `ai-rag` — end-to-end, proving the shared plumbing before the other five demos follow.
+A multi-module Maven monorepo (`spring-ai-apps`) originally pinned Spring Boot 4.1 + Spring AI 2.0 (now 4.1.2 / 2.0.2 on main), targeting Java 25, with one shared `ai-common` module and implemented Demo modules. Demos are provider-agnostic via `spring.profiles.active`, defaulting to local Ollama (zero-key). We build the foundation plus the first, flagship demo — `ai-rag` — end-to-end, proving the shared plumbing before the other demos follow.
 
 ## User Stories
 
 ### Monorepo & shared foundation
 
-1. As a developer, I want a multi-module Maven monorepo with pinned Spring Boot 4.1 and Spring AI 2.0 versions, so that all demos share one consistent dependency baseline.
+1. As a developer, I want a multi-module Maven monorepo with pinned Spring Boot 4.1.x and Spring AI 2.0.x versions, so that all demos share one consistent dependency baseline.
 2. As a developer, I want a shared `ai-common` module, so that Vector store config, the Eval harness, prompt templates, and common REST/error handling are defined once and reused across demos.
 3. As a developer, I want the parent POM to import both the Spring Boot parent and the `spring-ai-bom`, so that Spring AI dependencies resolve to compatible versions across every module.
 4. As a developer, I want a single top-level Docker Compose for Postgres/PGVector, so that demos that need a Vector store share one local infra service.
@@ -71,7 +71,7 @@ A multi-module Maven monorepo (`spring-ai-apps`) pinning Spring Boot 4.1 + Sprin
 
 ## Implementation Decisions
 
-- **Build**: Maven monorepo; parent POM uses `spring-boot-starter-parent` 4.1.1 and imports `spring-ai-bom` 2.0.1. Spring AI 2.0.x is compatible with Spring Boot 4.0.x/4.1.x; 4.1.1 is the current stable baseline and the Spring AI 2.0.1 artifacts are Boot 4.1-aligned.
+- **Build**: Maven monorepo; parent POM uses `spring-boot-starter-parent` 4.1.2 and imports `spring-ai-bom` 2.0.2. Spring AI 2.0.x is compatible with Spring Boot 4.0.x/4.1.x; 4.1.2 is the current stable `4.1.x` baseline and the Spring AI 2.0.2 artifacts remain on the Boot 4.1-aligned line.
 - **Language/runtime**: Java 25 toolchain; root package `dev.prasadgaikwad.springaiapps.*` (Java forbids hyphens, so the package differs from the Maven `spring-ai-apps` artifactId/groupId).
 - **Modules**: `ai-common` (shared) + `ai-rag`, `ai-agents`, `ai-eval`, `ai-observability`, `ai-multimodal`, `ai-structured` (demos). `ai-rag` is the sole demo built end-to-end now; the other five are scaffolded to green and deepened later.
 - **`ai-common` responsibilities**: Vector store config, Eval harness, prompt templates, common REST/error handling. Observability config is deliberately NOT here — it stays isolated in `ai-observability`.

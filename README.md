@@ -72,7 +72,7 @@ The full test suite requires Docker for RAG's PGVector Testcontainers tests. It 
 
 ## Architecture
 
-- **Parent**: `spring-boot-starter-parent` 4.1.1, `spring-ai-bom` 2.0.1
+- **Parent**: `spring-boot-starter-parent` 4.1.2, `spring-ai-bom` 2.0.2
 - **Root package**: `dev.prasadgaikwad.springaiapps.*` (Java forbids hyphens in package names)
 - **Provider portability**: Controlled via profiles; see [ADR-0001](docs/adr/0001-provider-portability-profiles-ollama-default.md)
 - **Shared plumbing**: Lives in `ai-common`; see [ADR-0002](docs/adr/0002-monorepo-shared-ai-common-module.md)

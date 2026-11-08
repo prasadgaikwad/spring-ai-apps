@@ -4,7 +4,7 @@ Working notes from building the first ticket (parent POM + `ai-common` + six dem
 skeletons) on `spring-ai-apps`. These are the non-obvious, hard-won facts that cost
 real debugging time and would otherwise trip up the next engineer.
 
-**Historical scope:** these notes describe the first six-demo scaffold. There are now seven implemented Demo modules. For current code-specific constraints and coverage, read [implementation learnings](implementation-learnings.md) and [architecture](../architecture.md). The startup lessons below apply to the provider starters included by the affected module, not to every possible Spring AI capability/provider.
+**Historical scope:** these notes describe the first six-demo scaffold. There are now seven implemented Demo modules. For current code-specific constraints and coverage, read [implementation learnings](implementation-learnings.md) and [architecture](../architecture.md). The startup lessons below apply to the provider starters included by the affected module, not to every possible Spring AI capability/provider. The dependency versions named here reflect the original scaffold; the parent now uses Spring Boot 4.1.2 / Spring AI 2.0.2.
 
 ## 1. Java package names forbid hyphens — the module name and package differ
 
