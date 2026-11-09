@@ -12,6 +12,10 @@ spring:
     anthropic:
       api-key: ${ANTHROPIC_API_KEY:not-configured}
 
+ai:
+  eval:
+    max-runs: 100
+
 springdoc:
   api-docs:
     path: /v3/api-docs

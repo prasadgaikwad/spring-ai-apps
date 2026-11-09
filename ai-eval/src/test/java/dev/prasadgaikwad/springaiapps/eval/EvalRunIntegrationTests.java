@@ -2,6 +2,7 @@ package dev.prasadgaikwad.springaiapps.eval;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -40,8 +42,16 @@ class EvalRunIntegrationTests {
     @Autowired
     MockMvc mockMvc;
 
+    @Autowired
+    EvalRunService service;
+
     @MockitoBean(name = "ollamaChatModel")
     ChatModel chatModel;
+
+    @BeforeEach
+    void clearHistory() {
+        service.clearHistory();
+    }
 
     @Test
     void contextLoads() {
@@ -142,5 +152,23 @@ class EvalRunIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"pairs\":[],\"criteria\":[]}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void clearHistoryRemovesRetainedRuns() throws Exception {
+        when(chatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        String request = """
+                {
+                  "pairs": [{"question": "Q?", "answer": "A Spring answer"}],
+                  "criteria": [{"type": "contains", "value": "Spring"}]
+                }
+                """;
+        mockMvc.perform(post("/api/eval/run").contentType(MediaType.APPLICATION_JSON).content(request))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/eval/runs")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)));
+
+        mockMvc.perform(delete("/api/eval/runs")).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/eval/runs")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(0)));
     }
 }

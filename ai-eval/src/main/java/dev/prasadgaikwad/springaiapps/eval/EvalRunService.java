@@ -1,8 +1,7 @@
 package dev.prasadgaikwad.springaiapps.eval;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import java.util.UUID;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -23,24 +23,27 @@ import dev.prasadgaikwad.springaiapps.common.eval.EvalReport;
  * Orchestrates an Eval run: generates answers for pairs with a blank
  * {@code answer} via the configured {@code ChatModel}, grades everything with the
  * shared {@link EvalHarness}, diffs against the previous run for regressions, and
- * keeps an in-memory history of runs.
+ * keeps a bounded, thread-safe in-memory history of runs.
  */
 @Service
 public class EvalRunService {
 
     private final ChatClient chatClient;
     private final EvalHarness evalHarness;
-    private final Deque<EvalReport> history = new ArrayDeque<>();
+    private final int maxRuns;
     private final Map<String, EvalReport> runs = new LinkedHashMap<>();
 
-    public EvalRunService(ChatModel chatModel, EvalHarness evalHarness) {
+    public EvalRunService(ChatModel chatModel, EvalHarness evalHarness,
+            @Value("${ai.eval.max-runs:100}") int maxRuns) {
         this.chatClient = ChatClient.create(chatModel);
         this.evalHarness = evalHarness;
+        this.maxRuns = maxRuns > 0 ? maxRuns : 100;
     }
 
     /**
      * Runs the harness and stores the report; returns the run with
      * {@link EvalReport#regressionsAgainst} computed from the most recent previous run.
+     * Generation and grading run outside the history lock; history mutation is synchronized.
      */
     public EvalRunResponse run(EvalRunRequest request) {
         if (request == null || request.pairs() == null || request.criteria() == null) {
@@ -74,20 +77,21 @@ public class EvalRunService {
         }
 
         EvalReport report = evalHarness.run(cases, criteria);
-        List<String> regressions = List.of();
-        EvalReport baseline = history.peekLast();
-        if (baseline != null) {
-            regressions = report.regressionsAgainst(baseline);
+        synchronized (this) {
+            List<String> regressions = List.of();
+            EvalReport baseline = lastReport();
+            if (baseline != null) {
+                regressions = report.regressionsAgainst(baseline);
+            }
+            String runId = UUID.randomUUID().toString();
+            runs.put(runId, report);
+            evictIfNeeded();
+            return new EvalRunResponse(runId, report, regressions);
         }
-
-        String runId = UUID.randomUUID().toString();
-        runs.put(runId, report);
-        history.addLast(report);
-        return new EvalRunResponse(runId, report, regressions);
     }
 
-    /** Lists stored runs in insertion order. */
-    public List<EvalRunSummary> listRuns() {
+    /** Lists stored runs in insertion order (oldest to newest within retained window). */
+    public synchronized List<EvalRunSummary> listRuns() {
         List<EvalRunSummary> summaries = new ArrayList<>(runs.size());
         for (Map.Entry<String, EvalReport> entry : runs.entrySet()) {
             EvalReport report = entry.getValue();
@@ -99,12 +103,41 @@ public class EvalRunService {
     }
 
     /** Fetches a stored run by id. */
-    public EvalRunResponse getRun(String runId) {
+    public synchronized EvalRunResponse getRun(String runId) {
         EvalReport report = runs.get(runId);
         if (report == null) {
             throw new dev.prasadgaikwad.springaiapps.common.ResourceNotFoundException("Eval run not found: " + runId);
         }
         return new EvalRunResponse(runId, report, List.of());
+    }
+
+    /** Clears retained run history. */
+    public synchronized void clearHistory() {
+        runs.clear();
+    }
+
+    private EvalReport lastReport() {
+        if (runs.isEmpty()) {
+            return null;
+        }
+        EvalReport last = null;
+        for (EvalReport report : runs.values()) {
+            last = report;
+        }
+        return last;
+    }
+
+    private void evictIfNeeded() {
+        while (runs.size() > maxRuns) {
+            Iterator<String> it = runs.keySet().iterator();
+            if (it.hasNext()) {
+                it.next();
+                it.remove();
+            }
+            else {
+                break;
+            }
+        }
     }
 
     private String generateAnswer(String question) {

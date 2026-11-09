@@ -16,8 +16,9 @@ See the [root setup](../README.md) for profiles and credentials. Supplied non-bl
 | Method/path | Response |
 | --- | --- |
 | `POST /api/eval/run` | `runId`, `report` (`cases`, `summary`), `regressions` |
-| `GET /api/eval/runs` | Insertion-ordered summaries: `runId`, `totalCases`, `passedCases`, `passRate` |
+| `GET /api/eval/runs` | Insertion-ordered summaries (retained window): `runId`, `totalCases`, `passedCases`, `passRate` |
 | `GET /api/eval/runs/{runId}` | Stored report with an empty `regressions` list |
+| `DELETE /api/eval/runs` | Clears retained run history (`204 No Content`) |
 | `GET /api/eval/ping` | Module and status |
 
 ```bash
@@ -46,7 +47,7 @@ flowchart TD
 
 Case IDs are `case-0`, `case-1`, etc. Regression comparison uses the **most recent run**, not a user-selected baseline. Keep pair ordering and meaning stable across runs: reordering questions compares unrelated pairs at the same position. To see a regression, repeat the example with a non-blank answer that omits `PGVector`; the POST response then lists `case-0`.
 
-History is held in an `ArrayDeque` and `LinkedHashMap`: it is process-local, unbounded, not persisted, and not concurrency-hardened. Restarting loses reports. Only the POST result carries the immediate regression diff; fetching a run does not recompute or retain that diff. Reports carry questions/grades, not generated answer text. These are reference-demo semantics, not a durable experiment-tracking service.
+History is process-local, bounded, and synchronized for concurrent access. It is **not** persisted across restarts. Retention is controlled by `ai.eval.max-runs` (default `100`); when the limit is exceeded, the oldest retained runs are evicted. `DELETE /api/eval/runs` clears retained history. Regression comparison uses the **most recent retained run** at the time a new run is stored, so concurrent submissions may compare against different baselines; history structure remains consistent. Only the POST result carries the immediate regression diff; fetching a run does not recompute or retain that diff. Reports carry questions/grades, not generated answer text. These are reference-demo semantics, not a durable experiment-tracking service.
 
 ## Tests and further reading
 
