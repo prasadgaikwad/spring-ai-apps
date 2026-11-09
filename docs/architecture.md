@@ -37,7 +37,7 @@ flowchart TB
     DE --> Jev[Configured Jev HTTP endpoint]
 ```
 
-An observation in RAG's process does not automatically reach observability's DuckDB. An MCP server definition does not automatically create a client connection; the current agents POM has no MCP client starter. The MCP peer edge represents the intended integration through the callback seam once configured, not a default connection. Decision endpoint compatibility remains an unverified adapter assumption.
+An observation in RAG's process does not automatically reach observability's DuckDB. The agents module includes both MCP server and client starters, but the server and client are disabled by default; a peer connection still requires explicit transport configuration. The MCP callback path is exercised by mock-provider tests and a real SSE protocol integration test; live peer topology remains configuration-dependent. Decision endpoint compatibility remains an unverified adapter assumption.
 
 ## 2. Build-time dependencies and ownership
 
