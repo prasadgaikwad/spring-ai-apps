@@ -112,7 +112,7 @@ UI `/chat` belongs independently to RAG and agents and calls the respective feat
 | --- | --- | --- |
 | RAG chunks and vectors | PGVector, default `vector_store` table | Compose volume persists; deterministic IDs upsert identical chunks; no obsolete-chunk deletion |
 | RAG keyword index expression | SQL over PGVector `content` | English full-text semantics; same table, no separate search service |
-| Eval history | `ArrayDeque` / `LinkedHashMap` | Restart loses data; no cap or synchronization; case IDs depend on pair position |
+| Eval history | Bounded, synchronized in-memory `LinkedHashMap` | Process-local/not durable; `ai.eval.max-runs` (default 100) evicts oldest; reset via `DELETE /api/eval/runs`; case IDs depend on pair position |
 | Observation spans | DuckDB `trace_spans` | File persists; no retention/migrations; generated row UUIDs; name-based automatic correlation |
 | Agent conversations | No application conversation store | Each request is independent |
 | Structured/media/decision results | Returned by request | No application persistence implemented |

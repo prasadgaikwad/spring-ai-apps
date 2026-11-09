@@ -3,6 +3,7 @@ package dev.prasadgaikwad.springaiapps.eval;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +48,11 @@ public class EvalController {
     @ResponseStatus(HttpStatus.OK)
     public EvalRunResponse get(@PathVariable String runId) {
         return service.getRun(runId);
+    }
+
+    @DeleteMapping("/runs")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void clear() {
+        service.clearHistory();
     }
 }
