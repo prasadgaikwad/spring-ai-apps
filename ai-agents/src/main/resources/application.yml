@@ -16,6 +16,13 @@ spring:
         enabled: false
         name: spring-ai-agents-mcp
         version: 0.1.0
+        protocol: STREAMABLE
+      client:
+        enabled: false
+        name: spring-ai-agents-mcp-client
+        version: 0.1.0
+        type: SYNC
+        request-timeout: 30s
 
 springdoc:
   api-docs:
