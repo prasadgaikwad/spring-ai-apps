@@ -4,7 +4,7 @@ A typed-decision REST adapter with a `DecisionClient` seam and `JevDecisionClien
 
 ## Implementation status
 
-The code implements local Choice/Score/Noul DTOs and an HTTP request/response mapping. **The current tests do not verify a successful upstream HTTP exchange or the vendor's live API contract.** The configured URL, route, model name, probability meanings, and Noul interpretation describe this adapter's assumptions. Validate them against the vendor before relying on live interoperability. The application does not calibrate or validate probabilities.
+The code implements local Choice/Score/Noul DTOs and an HTTP request/response mapping. `JevDecisionClientContractTests` verifies the adapter's HTTP contract against a deterministic `MockWebServer` (request path/body/authorization mapping, response parsing including documented fallbacks, blank/missing payload handling, invalid JSON, non-2xx propagation, and timeout failure). **The live vendor API contract, endpoint semantics, model names, and probability/Noul calibration remain unverified assumptions.** Validate them against the vendor before relying on live interoperability. The application does not calibrate or validate probabilities.
 
 ## Run and configuration
 
@@ -90,4 +90,4 @@ All DTOs are nested in `DecisionPrimitives`. The interface is a future extension
 
 ## Tests and learnings
 
-`mvn -pl ai-decision -am test` runs `DecisionControllerTests` (context, ping, empty-question rejection) and `DecisionPrimitivesTest` (record fields and state copying). There is no mocked HTTP success/mapping test and no real-provider test. The key learning is to distinguish an extension interface and DTO scaffold from verified provider portability. See [ADR-0003](../docs/adr/0003-decision-model-integration.md).
+`mvn -pl ai-decision -am test` runs `JevDecisionClientContractTests` (mocked HTTP request/response mapping, fallback parsing, non-2xx, invalid JSON, timeout), `DecisionControllerTests` (context, ping, empty-question rejection), and `DecisionPrimitivesTest` (record fields and state copying). There is no real-provider test. The key learning is to distinguish verified adapter behavior (covered by mock contract tests) from unverified provider portability/calibration. See [ADR-0003](../docs/adr/0003-decision-model-integration.md).
