@@ -47,7 +47,7 @@ Parsing and validation are different success criteria. `entity(Class)` may produ
 
 The primary ChatModel serves vision; image/TTS/transcription resolve their own optional interface beans. An auto-configured OpenAI media bean with a placeholder key can exist even under Ollama, so “optional” does not ensure an endpoint is offline or disabled. Test missing-bean behavior separately from invalid credentials and provider capability.
 
-The API uses base64 JSON rather than multipart streaming. Vision defaults to PNG and wraps decode/MIME/model failures; transcription ignores its MIME field, speech ignores `voice`, and speech labels output MPEG. Image dimensions apply only as a pair and `revisedPrompt` remains null. Mock media tests validate local mapping, not file formats or actual provider responses. Keep these limitations visible rather than documenting request fields as supported options just because the DTO declares them.
+The API uses base64 JSON rather than multipart streaming. Vision defaults to PNG, requires an image MIME type, and wraps decode/MIME/model failures. Image dimensions are applied independently and must be positive; `revisedPrompt` is populated only when the provider's metadata exposes it. Speech forwards `voice`/`format`/`speed` and derives its response MIME label from the requested format (default MPEG); it does not inspect the returned bytes. Transcription uses the MIME type to choose a filename extension and rejects unsupported audio subtypes, but still relies on the provider to interpret the bytes. Mock media tests validate local option mapping, not file formats or actual provider responses. Provider support for dimensions, voices, formats, and codecs remains unverified.
 
 ## Observability and DuckDB
 
