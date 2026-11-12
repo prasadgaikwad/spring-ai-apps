@@ -113,7 +113,7 @@ UI `/chat` belongs independently to RAG and agents and calls the respective feat
 | RAG chunks and vectors | PGVector, default `vector_store` table | Compose volume persists; deterministic IDs upsert identical chunks; no obsolete-chunk deletion |
 | RAG keyword index expression | SQL over PGVector `content` | English full-text semantics; same table, no separate search service |
 | Eval history | Bounded, synchronized in-memory `LinkedHashMap` | Process-local/not durable; `ai.eval.max-runs` (default 100) evicts oldest; reset via `DELETE /api/eval/runs`; case IDs depend on pair position |
-| Observation spans | DuckDB `trace_spans` | File persists; no retention/migrations; generated row UUIDs; name-based automatic correlation |
+| Observation spans | DuckDB `trace_spans` | File persists; no retention/migrations; automatic spans use generated in-process trace/span IDs, start/stop timing, and ERROR status; manual inserts keep caller IDs |
 | Agent conversations | No application conversation store | Each request is independent |
 | Structured/media/decision results | Returned by request | No application persistence implemented |
 
@@ -127,7 +127,7 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | ai-rag | Real PGVector Testcontainers ETL/query tests with fixed embeddings and mock chat; separate DB-free smoke/UI tests | Real embedding relevance, live model grounding quality |
 | ai-agents | Mock-backed REST/catalog tests; local calculator tests; context/UI | Live MCP handshake, actual provider tool-call execution |
 | ai-eval | Mock-backed grading/generation/history/regression REST tests | Durable/concurrent experiment tracking or model-quality metrics |
-| ai-observability | DuckDB insert/query REST and tag/record tests; context | Distributed identity propagation or true automatic durations |
+| ai-observability | DuckDB insert/query REST and tag/record tests; automatic handler correlation/timing/error tests; context | Distributed trace-context propagation or cross-JVM collection |
 | ai-multimodal | Mock-backed contracts for all four modalities, option mapping (dimensions/voice/format/speed/MIME-derived transcription filenames), revised-prompt metadata, and invalid input | Codec compatibility, live vision quality, provider support for dimensions/voices/formats |
 | ai-structured | Mock-backed REST conversion/validation; record constraints; context | Factual extraction accuracy or every provider's strict-schema support |
 | ai-decision | DTO fields/state copy; context/ping/empty questions | Upstream success, HTTP mapping, timeout/error behavior, calibrated probabilities |

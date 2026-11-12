@@ -37,10 +37,16 @@ public class TraceSpanRepository {
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
-    /** Persists a span (insert or replace). */
+    /** Persists a manually supplied span with a generated row ID and {@code OK} status. */
     public TraceSpan save(String traceId, String parentSpanId, String name, String kind,
                           Instant startTime, Instant endTime, Map<String, String> tags) {
-        String id = UUID.randomUUID().toString();
+        return save(UUID.randomUUID().toString(), traceId, parentSpanId, name, kind, startTime, endTime, tags, "OK");
+    }
+
+    /** Persists a span with a caller-selected span ID and status (insert or replace). */
+    public TraceSpan save(String id, String traceId, String parentSpanId, String name, String kind,
+                          Instant startTime, Instant endTime, Map<String, String> tags, String status) {
+        String spanId = StringUtils.hasText(id) ? id : UUID.randomUUID().toString();
         String tagsJson = TraceSpan.toTagsJson(tags, objectMapper);
         String sql = """
                 INSERT OR REPLACE INTO trace_spans
@@ -48,7 +54,7 @@ public class TraceSpanRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, id);
+            ps.setString(1, spanId);
             ps.setString(2, traceId);
             ps.setString(3, parentSpanId);
             ps.setString(4, name);
@@ -58,14 +64,14 @@ public class TraceSpanRepository {
             ps.setTimestamp(7, Timestamp.from(end));
             ps.setLong(8, Math.max(0, end.toEpochMilli() - startTime.toEpochMilli()));
             ps.setString(9, "ai-observability");
-            ps.setString(10, "OK");
+            ps.setString(10, StringUtils.hasText(status) ? status : "OK");
             ps.setString(11, tagsJson);
             ps.executeUpdate();
         }
         catch (SQLException ex) {
             throw new IllegalStateException("Failed to persist trace span", ex);
         }
-        return findById(id);
+        return findById(spanId);
     }
 
     /** Lists spans with optional filters, ordered by start time ascending. */
