@@ -24,7 +24,7 @@ _Avoid_: app, sample app
 The retrieval-augmented-generation demo with a full ETL ingestion pipeline and a query path (retrieval → rerank → generate) over a vector store.
 
 **ai-agents**:
-The agentic demo showcasing plain tool calling, MCP server tools, and an optional MCP callback-consumption boundary.
+The agentic demo showcasing plain tool calling, MCP server tools, an optional MCP callback-consumption boundary, and SSE streaming for plain chat.
 
 **ai-eval**:
 The evaluation demo: a runnable in-app harness that grades Q&A pairs against criteria and reports regression-style.

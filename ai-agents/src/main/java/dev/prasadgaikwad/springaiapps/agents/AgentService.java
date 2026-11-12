@@ -10,6 +10,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import reactor.core.publisher.Flux;
+
 import dev.prasadgaikwad.springaiapps.common.BadRequestException;
 
 /**
@@ -51,6 +53,15 @@ public class AgentService {
                 .call()
                 .chatResponse();
         return content(response);
+    }
+
+    /**
+     * Streams a plain answer token-by-token. Tools are intentionally not attached to this
+     * flow so the demo stays on the common streaming chat path.
+     */
+    public Flux<String> streamAnswer(String message) {
+        require(message);
+        return this.chatClient.prompt().user(message).stream().content();
     }
 
     /** Names of the tools discovered from connected MCP servers. */

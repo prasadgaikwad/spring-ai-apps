@@ -8,7 +8,7 @@ A multi-module Maven monorepo of Spring AI reference demos showcasing RAG, agent
 | --- | --- |
 | [`ai-common`](ai-common/README.md) | Shared infrastructure: provider-portable chat model wiring, VectorStore helpers, exceptions/error handling, and the Eval harness. |
 | [`ai-rag`](ai-rag/README.md) | Retrieval-Augmented Generation with hybrid search (semantic + PostgreSQL full-text), reciprocal rank fusion, reranking, and a grounding guard. Includes a Thymeleaf chat UI. |
-| [`ai-agents`](ai-agents/README.md) | Plain `@Tool` calling, optional MCP server publication and client callback seam, plus a minimal Thymeleaf chat UI. |
+| [`ai-agents`](ai-agents/README.md) | Plain `@Tool` calling, optional MCP server publication and client callback seam, plain-chat SSE streaming, plus a minimal Thymeleaf chat UI. |
 | [`ai-eval`](ai-eval/README.md) | In-app evaluation using the shared Eval harness: grade Q&A pairs against criteria, track history, and report regressions. |
 | [`ai-observability`](ai-observability/README.md) | All-local DuckDB trace sink consuming Spring AI Micrometer observations with query endpoints. |
 | [`ai-multimodal`](ai-multimodal/README.md) | All four modalities: image generation, vision, text-to-speech, and audio transcription. |

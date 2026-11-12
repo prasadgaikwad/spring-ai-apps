@@ -81,7 +81,7 @@ Only the branch for the active chat profile is primary. Other starters can still
 | --- | --- | --- | --- |
 | ai-common | Config aliases, `ApiExceptionHandler`, `EvalHarness` | Pure criteria/reports; no model calls inside harness | [Guide](../ai-common/README.md) |
 | ai-rag | `IngestController`, `QueryController`, `DocumentIngestionService`, `RagQueryService`, `RagConfig` | Text → chunks → embeddings → PGVector; hybrid retrieve → lexical rerank → advisor prompt → answer/sources | [Guide and sequences](../ai-rag/README.md) |
-| ai-agents | `AgentController`, `AgentService`, `AgentConfiguration` | Separate local-tool and optional-MCP callback paths; server starter present, client integration not supplied | [Guide and sequence](../ai-agents/README.md) |
+| ai-agents | `AgentController`, `AgentService`, `AgentConfiguration` | Separate local-tool and optional-MCP callback paths; plain-chat SSE streaming; both MCP starters present, disabled by default | [Guide and sequence](../ai-agents/README.md) |
 | ai-eval | `EvalController`, `EvalRunService` | Optional generation; harness report; compare latest baseline; process-local history | [Guide and flow](../ai-eval/README.md) |
 | ai-observability | `ObservabilityController`, `DuckDbObservationHandler`, `TraceSpanRepository` | In-process observations/manual spans to embedded DuckDB; filtered queries | [Guide and class diagram](../ai-observability/README.md) |
 | ai-multimodal | `MultimodalController`, `MultimodalService` | Image model, chat with image media, TTS bytes, transcription bytes | [Guide and flow](../ai-multimodal/README.md) |
@@ -95,7 +95,7 @@ All seven demos have `GET /api/<name>/ping`, `/v3/api-docs`, and Swagger UI (`/s
 | Prefix | Feature routes |
 | --- | --- |
 | `/api/rag` | `POST /ingest`, `POST /query` |
-| `/api/agents` | `POST /ask`, `POST /mcp/ask`, `GET /tools`, `GET /mcp/tools` |
+| `/api/agents` | `POST /ask`, `POST /mcp/ask`, `POST /stream` (SSE), `GET /tools`, `GET /mcp/tools` |
 | `/api/eval` | `POST /run`, `GET /runs`, `GET /runs/{runId}` |
 | `/api/observability` | `POST /spans`, `GET /spans`, `GET /traces` |
 | `/api/multimodal` | `POST /image`, `POST /vision`, `POST /speech`, `POST /transcribe` |
@@ -125,7 +125,7 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | --- | --- | --- |
 | ai-common | Criterion/report/harness unit tests | Semantic quality of arbitrary custom criteria |
 | ai-rag | Real PGVector Testcontainers ETL/query tests with fixed embeddings and mock chat; separate DB-free smoke/UI tests | Real embedding relevance, live model grounding quality |
-| ai-agents | Mock-backed REST/catalog tests; local calculator tests; context/UI | Live MCP handshake, actual provider tool-call execution |
+| ai-agents | Mock-backed REST/catalog tests; local calculator tests; mocked-model SSE token/done/error contract tests; real local MCP SSE handshake test; context/UI | Live provider streaming behavior, arbitrary live MCP peer topology, actual model tool-call selection |
 | ai-eval | Mock-backed grading/generation/history/regression REST tests | Durable/concurrent experiment tracking or model-quality metrics |
 | ai-observability | DuckDB insert/query REST and tag/record tests; context | Distributed identity propagation or true automatic durations |
 | ai-multimodal | Mock-backed contracts for all four modalities, option mapping (dimensions/voice/format/speed/MIME-derived transcription filenames), revised-prompt metadata, and invalid input | Codec compatibility, live vision quality, provider support for dimensions/voices/formats |
