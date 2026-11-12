@@ -1,6 +1,6 @@
 # ai-agents
 
-Two tool-enabled chat paths: local `@Tool` methods and tools discovered through MCP. The module also defines MCP server tools and a minimal `/chat` Thymeleaf page. Package: `dev.prasadgaikwad.springaiapps.agents`.
+Two tool-enabled chat paths: local `@Tool` methods and tools discovered through MCP. A separate plain-chat endpoint streams tokens over SSE. The module also defines MCP server tools and a minimal `/chat` Thymeleaf page. Package: `dev.prasadgaikwad.springaiapps.agents`.
 
 ## Run and configure
 
@@ -19,6 +19,7 @@ MCP server publication and MCP client auto-configuration are **disabled by defau
 | --- | --- |
 | `POST /api/agents/ask` | `{"message":"..."}` → `{"message":"...","answer":"..."}` using local tools |
 | `POST /api/agents/mcp/ask` | Same shape, with discovered MCP callbacks |
+| `POST /api/agents/stream` | `{"message":"..."}` → `text/event-stream` with `token`, `done`, or `error` events; plain chat without tools |
 | `GET /api/agents/tools` | `source` and local tool names |
 | `GET /api/agents/mcp/tools` | `source` and sorted discovered MCP tool names |
 | `GET /api/agents/ping` | Module response |
@@ -32,6 +33,31 @@ curl -s http://localhost:8080/api/agents/mcp/tools
 ```
 
 OpenAPI is at `/v3/api-docs` and `/swagger-ui.html`. Blank messages produce a shared 400 error. An absent model result is rejected. No application-level conversation history is stored between requests.
+
+## Streaming chat (SSE)
+
+`POST /api/agents/stream` streams a plain chat answer token-by-token through Spring AI's `ChatClient.stream().content()`. It deliberately does **not** attach local or MCP tools; use `/api/agents/ask` or `/api/agents/mcp/ask` when tool use is required. The existing non-streaming endpoints are unchanged.
+
+```bash
+curl -N http://localhost:8080/api/agents/stream -H 'Content-Type: application/json' \
+  -d '{"message":"Explain token streaming in one sentence."}'
+```
+
+The request body is the same `{"message":"..."}` shape. A blank message returns the shared 400 JSON response before streaming starts. The response is `text/event-stream` with these events:
+
+```text
+event:token
+data:Hello
+
+event:token
+data: world
+
+event:done
+```
+
+Each successful model chunk is emitted as an event named `token` (the `data` line carries the chunk text); the stream ends with `done`. If the provider stream fails after the response has started, the endpoint emits an `error` event and completes. HTTP status remains 200 in that case because headers are already committed. Use `curl -N` (or disable client buffering) to see chunks as they arrive.
+
+Streaming support, chunk granularity, and whether a provider emits whitespace-only chunks vary by provider/model/profile. The mock-backed tests verify this module's SSE contract, not a live provider's streaming behavior.
 
 ## Tool ownership
 
@@ -74,4 +100,4 @@ Spring AI handles the tool-call exchange. Tools are available to the model; a re
 
 ## Tests and learnings
 
-`mvn -pl ai-agents -am test` runs REST/UI context tests with a named mock `ollamaChatModel`, focused calculator tests, and `McpClientProtocolIntegrationTests`. `McpClientProtocolIntegrationTests` starts the MCP server (SSE protocol) on a random port, performs a real MCP client handshake, discovers `lookupGlossary`/`currentVersion`, invokes them over the protocol, and verifies a `SyncMcpToolCallbackProvider` exposes the discovered callbacks. Mock-backed REST tests cover the `/api/agents/mcp/*` service/controller path with configured callback providers; they do not require a live model to choose tool calls. Live peer topology and model-generated tool selection remain environment-dependent. See [implementation learnings](../docs/learnings/implementation-learnings.md).
+`mvn -pl ai-agents -am test` runs REST/UI context tests with a named mock `ollamaChatModel`, focused calculator tests, `AgentStreamingIntegrationTests`, and `McpClientProtocolIntegrationTests`. `AgentStreamingIntegrationTests` mocks `ChatModel.stream` and verifies the SSE `token`/`done` events, blank-message 400, and the `error` event when the model stream fails. `McpClientProtocolIntegrationTests` starts the MCP server (SSE protocol) on a random port, performs a real MCP client handshake, discovers `lookupGlossary`/`currentVersion`, invokes them over the protocol, and verifies a `SyncMcpToolCallbackProvider` exposes the discovered callbacks. Mock-backed REST tests cover the `/api/agents/mcp/*` service/controller path with configured callback providers; they do not require a live model to choose tool calls. Live peer topology, live streaming behavior, and model-generated tool selection remain environment-dependent. See [implementation learnings](../docs/learnings/implementation-learnings.md).

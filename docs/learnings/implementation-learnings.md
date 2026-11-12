@@ -37,7 +37,9 @@ The REST layer differs from the shared core: blank answers trigger generation, I
 
 Local calculator tools and MCP tools are separate paths. Local tools are registered on `toolAssistant`; the MCP request attaches callbacks supplied by an optional `ToolCallbackProvider`. No provider means an empty callback list, so ordinary chat can still return an answer. A successful answer alone does not prove tool execution.
 
-The MCP server is disabled by default. Explicitly enabling server publication does not configure a client peer or a loopback connection. The POM currently has a server starter but no MCP client starter, so remote discovery needs additional integration/configuration or a supplied callback provider. The module's MCP glossary is fixed in code rather than read from the domain document. Existing tests check catalogs and mocked chat, plus direct calculator behavior; they do not prove a live MCP transport exchange.
+The MCP server is disabled by default. Explicitly enabling server publication does not configure a client peer or a loopback connection. The POM includes the MCP server and client starters, but remote discovery still needs a supported client connection or a supplied callback provider. The module's MCP glossary is fixed in code rather than read from the domain document. Existing tests check catalogs and mocked chat, plus direct calculator behavior and a real local SSE client/server handshake; they do not prove arbitrary live peer topology or model-generated tool selection.
+
+Streaming is a separate plain-chat path. `POST /api/agents/stream` uses `ChatClient.stream().content()` without local or MCP tools and returns `text/event-stream` events named `token`/`done`, or `error` if the provider stream fails after headers are sent. The mock test verifies the module's SSE framing and error mapping, not a live provider's chunking, whitespace behavior, or streaming support. Non-streaming endpoints keep their existing contracts.
 
 ## Structured extraction
 
