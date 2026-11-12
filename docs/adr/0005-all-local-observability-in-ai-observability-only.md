@@ -21,7 +21,7 @@ We need trace/observation visibility for demos without introducing external depe
 
 An external tracing backend or shared sink in every demo would add operational dependencies and cross-module coupling. Embedded DuckDB keeps the reference locally inspectable and the dependency isolated, at the cost of no automatic cross-JVM collection or distributed tracing backend.
 
-The current automatic handler uses operation names for trace/parent identity and assigns both times on stop. Repository status remains `OK` even for tagged errors. These shortcuts do not provide tracing-context correlation or accurate operation durations; they are documented implementation gaps, not desired tracing semantics. Manual REST insertion can carry caller-selected trace IDs and real timestamps. Persistence is synchronous, schema initialization uses create-if-absent, and there is no retention/migration system.
+The automatic handler now assigns generated in-process trace/span IDs, captures start and stop times, stores the nearest observed ancestor's span ID as `parentSpanId`, and records `ERROR` status for error-bearing observations. This improves local correlation and timing but is still not distributed tracing: Micrometer Tracing span IDs would require a Brave/OpenTelemetry bridge, which would add a dependency this demo deliberately avoids; IDs are not W3C trace-context IDs, are not propagated across Demo JVMs, and there is no OpenTelemetry export. Manual REST insertion can carry caller-selected trace IDs and real timestamps. Persistence is synchronous, schema initialization uses create-if-absent, and there is no retention/migration system.
 
 ## References
 - Issue #20, PR #22

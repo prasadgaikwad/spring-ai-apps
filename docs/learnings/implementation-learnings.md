@@ -51,9 +51,9 @@ The API uses base64 JSON rather than multipart streaming. Vision defaults to PNG
 
 ## Observability and DuckDB
 
-The handler accepts every local observation context. It copies tags/errors on stop, then writes synchronously to DuckDB. That is useful local capture but not a distributed tracing bridge: observation names stand in for trace/parent IDs, both timestamps are recorded at stop, and status is always `OK`. Do not use automatic stored duration for latency analysis or treat name-based grouping as an actual request trace.
+The handler accepts every local observation context, assigns generated in-process span IDs, captures `onStart`/`onStop` times, inherits the nearest observed ancestor's trace ID, stores the ancestor's span ID as `parentSpanId`, and writes synchronously to DuckDB. Errors set status `ERROR` plus an `error` tag. This is useful local capture but not a distributed tracing bridge: IDs are not W3C trace-context IDs, are not propagated across Demo JVMs, and the module is not an OpenTelemetry collector. If a parent was never observed, the child starts a new trace; an observation that stops without a start gets a zero-length interval. Automatic durations are wall-clock observation times, not provider-internal timings.
 
-Manual REST insertion can carry proper timestamps and chosen trace IDs. Query limits clamp to 1–500; span ordering is oldest-first while trace summaries order by latest aggregate start. The file path is relative to the JVM working directory; schema initialization is create-if-absent, with no migration or retention policy. Tests exercise persistence/query/tag behavior, not automatic tracing correctness.
+Manual REST insertion can carry proper timestamps and chosen trace IDs and is stored as `OK`. Query limits clamp to 1–500; span ordering is oldest-first while trace summaries order by latest aggregate start. The file path is relative to the JVM working directory; schema initialization is create-if-absent, with no migration or retention policy. Tests exercise persistence/query/tag behavior and the automatic handler's in-process correlation/timing/error semantics, not distributed tracing correctness.
 
 ## Decisions and the Jev adapter
 
