@@ -114,7 +114,7 @@ UI `/chat` belongs independently to RAG and agents and calls the respective feat
 | RAG keyword index expression | SQL over PGVector `content` | English full-text semantics; same table, no separate search service |
 | Eval history | Bounded, synchronized in-memory `LinkedHashMap` | Process-local/not durable; `ai.eval.max-runs` (default 100) evicts oldest; reset via `DELETE /api/eval/runs`; case IDs depend on pair position |
 | Observation spans | DuckDB `trace_spans` | File persists; no retention/migrations; automatic spans use generated in-process trace/span IDs, start/stop timing, and ERROR status; manual inserts keep caller IDs |
-| Agent conversations | No application conversation store | Each request is independent |
+| Agent conversations | No application conversation store | Each request is independent; conditional session-memory plan: [issue #47](plans/47-session-memory-migration.md), not implemented |
 | Structured/media/decision results | Returned by request | No application persistence implemented |
 
 The shared Eval harness creates immutable list copies and deterministic grades; model generation and external I/O remain in Demo services. Decision state copies are shallow; arbitrary nested values remain caller-owned objects.
