@@ -37,6 +37,8 @@ curl -s http://localhost:8080/api/rag/ingest -H 'Content-Type: application/json'
 
 Inline text wins when supplied. Resource input uses Spring `ResourceLoader` and `TextReader`; this is text ingestion, not a PDF/OCR pipeline or multipart upload.
 
+The `/chat` page and `/api/rag/query` are stateless between requests: retrieval context and answers are per request, and no conversation history is stored. If multi-turn history is added later, follow the conditional [session-memory migration plan](../docs/plans/47-session-memory-migration.md) rather than adding `ChatMemory` preemptively.
+
 ## Ingestion flow
 
 ```mermaid

@@ -114,7 +114,7 @@ The #46 evaluation kept the custom adapter after the RC2 prototype: the standard
 - Keep `spring.ai.mcp.server.enabled=false` and `spring.ai.mcp.client.enabled=false` defaults.
 - Keep the existing SSE integration test as the compatibility check for the enabled client/server seam.
 - The "modern" MCP protocol is opt-in via `spring.ai.mcp.server.protocol=MODERN`. It is not part of this upgrade. The spike in [#45](https://github.com/prasadgaikwad/spring-ai-apps/issues/45) verified the modern server over raw HTTP but found no modern client in Spring AI `2.1.0-RC2`; see [MCP `MODERN` protocol spike](../spikes/45-mcp-modern-protocol.md). Keep the existing defaults and revisit after GA, modern client support, and the MCP SDK GA version.
-- Chat memory is deprecated, not removed. Nothing changes at runtime in 2.1. Plan a session-memory migration only when the repo starts using conversation memory, or before Spring AI 3.0.
+- Chat memory is deprecated, not removed. Nothing changes at runtime in 2.1. Plan a session-memory migration only when the repo starts using conversation memory, or before Spring AI 3.0. The conditional plan and trigger are in [Session-memory migration plan](../plans/47-session-memory-migration.md); no migration is implemented now.
 
 ## Migration task list
 
