@@ -130,7 +130,7 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | ai-observability | DuckDB insert/query REST and tag/record tests; automatic handler correlation/timing/error tests; context | Distributed trace-context propagation or cross-JVM collection |
 | ai-multimodal | Mock-backed contracts for all four modalities, option mapping (dimensions/voice/format/speed/MIME-derived transcription filenames), revised-prompt metadata, and invalid input | Codec compatibility, live vision quality, provider support for dimensions/voices/formats |
 | ai-structured | Mock-backed REST conversion/validation; record constraints; context | Factual extraction accuracy or every provider's strict-schema support |
-| ai-decision | DTO fields/state copy; context/ping/empty questions | Upstream success, HTTP mapping, timeout/error behavior, calibrated probabilities |
+| ai-decision | DTO fields/state copy; context/ping/empty questions; MockWebServer contract tests for request/response mapping, documented fallbacks, non-2xx, invalid JSON, and timeout | Live vendor contract/endpoint semantics, calibrated probabilities, provider portability, and standard `DecisionModel` interoperability |
 
 Run `mvn test` for the whole reactor; Docker is required for RAG Testcontainers. They provision their own database rather than using Compose. Named ChatModel mocks should stub `getOptions()` before constructing clients. See [implementation learnings](learnings/implementation-learnings.md) for pitfalls and [root run instructions](../README.md) for prerequisite installation.
 
