@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for the module/client boundary. Vendor protocol assumptions remain unverified by upstream tests.
+Accepted for the module/client boundary. Spring AI 2.1's `DecisionModel` was evaluated in issue #46 and is not adopted; see the [evaluation](../spikes/46-decision-model-evaluation.md). Vendor protocol assumptions remain unverified by upstream tests.
 
 ## Context and decision
 
@@ -17,6 +17,16 @@ Use `DecisionProperties` and WebClient for base URL, key, model, and timeout. Th
 - Local Noul means a null/none answer with reason/probability. Its external-provider semantics require confirmation.
 - Default tests cover startup, ping, empty questions, and DTO construction. Earlier descriptions of mocked HTTP/mapping tests overstated coverage.
 - Answer parsing is permissive (including probability default 1.0); validation, retries, and provider-specific error mapping remain gaps, not accepted guarantees.
+
+## Spring AI 2.1 `DecisionModel` evaluation (issue #46)
+
+Spring AI 2.1 adds `DecisionModel`, `SystemOneDecisionModel`, and `OllamaDecisionModel`. The evaluation kept the custom adapter for three reasons:
+
+- **Noul has no standard answer type.** The official `SystemOneDecisionMapper` converts a TypeSafe `NoulAnswer` into a `YesNoAnswer` carrying the probability. The Noul reason and its "no valid choice applies" meaning are lost.
+- **Score semantics differ.** The standard `ScoreQuestion` is an ordered set of levels and its answer carries per-level probabilities. The local answer is an arbitrary numeric score with one probability. A mapping has to invent levels or change the public contract.
+- **The contracts would change.** `DecisionModel` returns a map keyed by question name and validates answer types; the local API returns a flat `questionId`-keyed list and is deliberately permissive. The standard providers also replace much of the `ai.decision.*` configuration with provider starters, a `TypeSafeClient`, or provider-specific properties.
+
+Keep the current `DecisionClient` seam, `JevDecisionClient`, `DecisionPrimitives`, and `ai.decision.*` contract. Any future wrapper around `DecisionModel` must preserve Noul and Score semantics, keep the REST/property contract or introduce an explicit breaking change, and be recorded as a new or superseding decision. The spike evidence and comparison matrix are in the [evaluation](../spikes/46-decision-model-evaluation.md).
 
 ## Consequences and references
 

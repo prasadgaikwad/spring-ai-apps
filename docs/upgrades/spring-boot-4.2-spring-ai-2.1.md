@@ -91,8 +91,8 @@ Spring AI 2.1 adds a standard typed-decision API:
 
 - `DecisionPrompt`, `DecisionResponse`, `DecisionOptions`, and question types in `org.springframework.ai.decision`
 - `OpenAiDecisionModel`
-- `OllamaDecisionModel`, which uses the Ollama `/v1/systemone` endpoint through `SystemOneClient`
-- `SystemOneDecisionModel`, backed by `spring-ai-starter-model-systemone`
+- `OllamaDecisionModel`, which uses the Ollama `/v1/systemone` endpoint through the TypeSafe Java SDK
+- `SystemOneDecisionModel`, in `spring-ai-systemone`, built on the TypeSafe Java SDK; no System One auto-configuration starter was found in `2.1.0-RC2`
 
 The repo's `ai-decision` demo is a deliberately separate Jev/SystemOne-style adapter:
 
@@ -100,14 +100,13 @@ The repo's `ai-decision` demo is a deliberately separate Jev/SystemOne-style ada
 - `JevDecisionClient` posts to `/v1/systemone` through WebClient and permissively parses provider JSON
 - `ai.decision.*` selects the endpoint, key, model, and timeout
 
-There is **no class or package collision**. The demo's purpose is the adapter boundary and provider-contract tolerance, not a thin wrapper over a Spring AI model. Recommendation for the version bump:
+There is **no class or package collision**. The demo's purpose is the adapter boundary and provider-contract tolerance, not a thin wrapper over a Spring AI model.
+
+The #46 evaluation kept the custom adapter after the RC2 prototype: the standard API has no Noul answer, its official System One mapper turns Noul into a `YesNoAnswer` probability and loses the reason, and its Score type requires ordered levels/per-level probabilities. See [Spring AI `DecisionModel` evaluation](../spikes/46-decision-model-evaluation.md). Recommendation for the version bump:
 
 1. Do not replace `JevDecisionClient` with `DecisionModel` as part of the dependency upgrade.
 2. Keep the public `/api/decision` contracts and `ai.decision.*` properties stable.
-3. Open a separate spike to compare the custom adapter with `SystemOneDecisionModel`/`OllamaDecisionModel`, including:
-   - whether the standard API can express the current Choice/Score/Noul responses
-   - how provider-specific answer envelopes map to `DecisionResponse`
-   - what demo value remains if the custom adapter is removed
+3. The [#46](https://github.com/prasadgaikwad/spring-ai-apps/issues/46) evaluation compared the custom adapter with `SystemOneDecisionModel`/`OllamaDecisionModel`: the standard API cannot express Noul losslessly, and its Score/Choice shapes carry different semantics. Keep the custom adapter unless a later decision accepts those contract changes.
 4. If the standard API is adopted later, supersede or amend [ADR-0003](../adr/0003-decision-model-integration.md) rather than silently changing the boundary.
 
 ## MCP and session follow-ups

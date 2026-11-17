@@ -6,7 +6,7 @@ These records explain enduring boundaries and trade-offs visible in the current 
 | --- | --- | --- |
 | [0001](0001-provider-portability-profiles-ollama-default.md) | Profile-selected primary chat aliases with Ollama default | Accepted; embeddings/media have capability-specific limits |
 | [0002](0002-monorepo-shared-ai-common-module.md) | Maven monorepo and shared configuration boundary | Accepted; eight modules total |
-| [0003](0003-decision-model-integration.md) | Separate typed-decision client | Accepted boundary; upstream contract not validated |
+| [0003](0003-decision-model-integration.md) | Separate typed-decision client | Accepted boundary; Spring AI 2.1 `DecisionModel` evaluated and not adopted; upstream contract not validated |
 | [0004](0004-eval-harness-in-ai-common.md) | Pure deterministic Eval harness in ai-common | Accepted; generation/history remain in ai-eval |
 | [0005](0005-all-local-observability-in-ai-observability-only.md) | Local DuckDB observation sink in one demo | Accepted; in-process correlation/timing improved; distributed tracing still out of scope |
 | [0006](0006-hybrid-rag-retrieval.md) | PGVector + PostgreSQL full-text, RRF, lexical rerank | Accepted; explicit schema coupling |

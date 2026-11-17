@@ -15,6 +15,10 @@ mvn -pl ai-decision spring-boot:run
 curl -s http://localhost:8080/api/decision/ping
 ```
 
+## Spring AI 2.1 `DecisionModel` evaluation
+
+Spring AI 2.1's standard `DecisionModel` was evaluated against this adapter. The module keeps `DecisionClient`/`JevDecisionClient`, the local Choice/Score/Noul DTOs, and `ai.decision.*` for now. The standard answer hierarchy has no Noul type; the official System One mapper turns Noul into a `YesNoAnswer` probability and drops the reason, and its Score answer is tied to ordered levels and per-level probabilities. See the [evaluation](../docs/spikes/46-decision-model-evaluation.md) and [ADR-0003](../docs/adr/0003-decision-model-integration.md).
+
 Unlike the other six demos, there is no default `ollama` profile or cloud-profile YAML in this module. Configuration uses `ai.decision.*`:
 
 | Property | Environment / default | Actual behavior |
