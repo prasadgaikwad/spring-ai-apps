@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import dev.prasadgaikwad.springaiapps.common.BadRequestException;
+import dev.prasadgaikwad.springaiapps.common.UpstreamServiceException;
+import dev.prasadgaikwad.springaiapps.common.UpstreamTimeoutException;
 import dev.prasadgaikwad.springaiapps.common.eval.Criterion;
 import dev.prasadgaikwad.springaiapps.common.eval.EvalCase;
 import dev.prasadgaikwad.springaiapps.common.eval.EvalHarness;
@@ -149,7 +152,22 @@ public class EvalRunService {
             return answer == null ? "" : answer;
         }
         catch (Exception ex) {
-            throw new BadRequestException("Failed to generate answer for evaluation: " + ex.getMessage());
+            if (hasTimeoutCause(ex)) {
+                throw new UpstreamTimeoutException("Evaluation model call timed out", ex);
+            }
+            throw new UpstreamServiceException("Evaluation model call failed", ex);
         }
+    }
+
+    private static boolean hasTimeoutCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof TimeoutException) {
+                return true;
+            }
+            Throwable cause = current.getCause();
+            current = cause == current ? null : cause;
+        }
+        return false;
     }
 }

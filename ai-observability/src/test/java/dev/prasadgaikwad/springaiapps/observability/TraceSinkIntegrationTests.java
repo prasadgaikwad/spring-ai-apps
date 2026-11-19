@@ -15,6 +15,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,5 +65,32 @@ class TraceSinkIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"traceId\":\"t1\",\"name\":\"  \"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void invalidLimitReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/api/observability/spans").param("limit", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Invalid request parameter"))
+                .andExpect(jsonPath("$.path").value("/api/observability/spans"));
+    }
+
+    @Test
+    void unsupportedMethodReturnsMethodNotAllowed() throws Exception {
+        mockMvc.perform(put("/api/observability/spans"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.message").value("Method not allowed"));
+    }
+
+    @Test
+    void malformedJsonReturnsBadRequestWithoutLeakingParserDetail() throws Exception {
+        mockMvc.perform(post("/api/observability/spans")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Malformed request body"));
     }
 }

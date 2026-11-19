@@ -1,6 +1,7 @@
 package dev.prasadgaikwad.springaiapps.eval;
 
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -152,6 +153,59 @@ class EvalRunIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"pairs\":[],\"criteria\":[]}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void malformedJsonReturnsBadRequestWithoutLeakingParserDetail() throws Exception {
+        mockMvc.perform(post("/api/eval/run")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Malformed request body"))
+                .andExpect(jsonPath("$.path").value("/api/eval/run"));
+    }
+
+    @Test
+    void upstreamModelFailureReturnsBadGatewayWithSafeMessage() throws Exception {
+        when(chatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        when(chatModel.call(any(Prompt.class)))
+                .thenThrow(new IllegalStateException("secret provider detail"));
+
+        String request = """
+                {
+                  "pairs": [{"question": "Q?", "answer": null}],
+                  "criteria": [{"type": "contains", "value": "Spring"}]
+                }
+                """;
+
+        mockMvc.perform(post("/api/eval/run")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.code").value("BAD_GATEWAY"))
+                .andExpect(jsonPath("$.message").value("Upstream service failed"));
+    }
+
+    @Test
+    void upstreamTimeoutReturnsGatewayTimeout() throws Exception {
+        when(chatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        when(chatModel.call(any(Prompt.class)))
+                .thenThrow(new IllegalStateException("wrapped", new TimeoutException("timeout detail")));
+
+        String request = """
+                {
+                  "pairs": [{"question": "Q?", "answer": null}],
+                  "criteria": [{"type": "contains", "value": "Spring"}]
+                }
+                """;
+
+        mockMvc.perform(post("/api/eval/run")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isGatewayTimeout())
+                .andExpect(jsonPath("$.code").value("GATEWAY_TIMEOUT"))
+                .andExpect(jsonPath("$.message").value("Upstream service timed out"));
     }
 
     @Test

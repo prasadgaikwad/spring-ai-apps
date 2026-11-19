@@ -104,7 +104,7 @@ All seven demos have `GET /api/<name>/ping`, `/v3/api-docs`, and Swagger UI (`/s
 
 UI `/chat` belongs independently to RAG and agents and calls the respective feature API. There is no `/api/agents/chat` route.
 
-`ApiExceptionHandler` translates explicit `BadRequestException` (400), `ResourceNotFoundException` (404), and generic exceptions (500) to `CommonError(timestamp,code,message,path)`. Validation is implemented by each use case; malformed JSON, invalid types, and provider failures are not uniformly classified by a comprehensive error taxonomy. The generic handler returns exception messages. Structured domain violations intentionally return a successful conversion response with `valid=false`, not a transport error.
+`ApiExceptionHandler` translates explicit `BadRequestException` (400), `ResourceNotFoundException` (404), MVC binding/type/parameter errors (400), unsupported methods (405), `UpstreamServiceException` (502), `UpstreamTimeoutException` (504), and unexpected exceptions (500) to `CommonError(timestamp,code,message,path)`. Explicit domain exceptions keep their intentional messages; framework, upstream, and unexpected failures use fixed safe messages. Structured domain violations intentionally return a successful conversion response with `valid=false`, not a transport error.
 
 ## 6. Persistence and lifecycle
 
