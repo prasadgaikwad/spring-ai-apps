@@ -53,12 +53,13 @@ flowchart BT
     R --> P[PGVector starter + JDBC]
     O --> Duck[DuckDB JDBC]
     A --> MCP[MCP starters]
-    C --> Ollama[Ollama model starter + web infrastructure]
+    C --> API[Spring AI model API + web infrastructure]
+    Demo --> Ollama[Ollama / OpenAI / Anthropic starters declared per chat demo]
 ```
 
-The parent pins Boot 4.1.2, Spring AI 2.0.2, Java 25, Springdoc 3.2.0, and Testcontainers 2.0.3. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`. Planning for the next Boot/Spring AI line is tracked in the [Spring Boot 4.2 / Spring AI 2.1 upgrade plan](upgrades/spring-boot-4.2-spring-ai-2.1.md); the plan is not a claim that those versions are current.
+The parent pins Boot 4.1.2, Spring AI 2.0.2, Java 25, Springdoc 3.2.0, Testcontainers 2.0.3, DuckDB JDBC 1.1.3, and MockWebServer 4.12.0. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`. Planning for the next Boot/Spring AI line is tracked in the [Spring Boot 4.2 / Spring AI 2.1 upgrade plan](upgrades/spring-boot-4.2-spring-ai-2.1.md); the plan is not a claim that those versions are current.
 
-Shared code is configuration/error translation and `common.eval`, not a shared persistence or business-service layer. Six Spring AI demos declare cloud starters; `ai-decision` uses WebClient and separate configuration. Shared configuration is discovered through the demo's component scan. No shared prompt-template library currently exists despite the original intended scope.
+Shared code is configuration/error translation, the Spring AI model API, and `common.eval`, not a shared persistence or business-service layer. Six Spring AI demos declare provider starters; `ai-decision` uses WebClient with no `ChatModel` beans and separate configuration. Shared configuration is discovered through the demo's component scan. No shared prompt-template library currently exists despite the original intended scope.
 
 ## 3. Provider selection is capability-specific
 
@@ -84,8 +85,8 @@ A separate opt-in `security` profile in `ai-common` registers a servlet filter r
 | ai-common | Config aliases, `ApiExceptionHandler`, `EvalHarness` | Pure criteria/reports; no model calls inside harness | [Guide](../ai-common/README.md) |
 | ai-rag | `IngestController`, `QueryController`, `DocumentIngestionService`, `RagQueryService`, `RagConfig` | Text → chunks → embeddings → PGVector; hybrid retrieve → lexical rerank → advisor prompt → answer/sources | [Guide and sequences](../ai-rag/README.md) |
 | ai-agents | `AgentController`, `AgentService`, `AgentConfiguration` | Separate local-tool and optional-MCP callback paths; plain-chat SSE streaming; both MCP starters present, disabled by default | [Guide and sequence](../ai-agents/README.md) |
-| ai-eval | `EvalController`, `EvalRunService` | Optional generation; harness report; compare latest baseline; process-local history | [Guide and flow](../ai-eval/README.md) |
-| ai-observability | `ObservabilityController`, `DuckDbObservationHandler`, `TraceSpanRepository` | In-process observations/manual spans to embedded DuckDB; filtered queries | [Guide and class diagram](../ai-observability/README.md) |
+| ai-eval | `EvalController`, `EvalRunService` | Optional bounded-parallel generation in input order; harness report; compare latest baseline; process-local history | [Guide and flow](../ai-eval/README.md) |
+| ai-observability | `ObservabilityController`, `DuckDbObservationHandler`, `TraceSpanSink`, `TraceSpanRepository` | In-process observations/manual spans to embedded DuckDB via an async single writer; filtered queries with retention | [Guide and class diagram](../ai-observability/README.md) |
 | ai-multimodal | `MultimodalController`, `MultimodalService` | Image model, chat with image media, TTS bytes, transcription bytes | [Guide and flow](../ai-multimodal/README.md) |
 | ai-structured | `StructuredController`, `StructuredExtractionService`, `ExtractionService` | Select target → entity conversion → Jakarta validation → value/violations | [Guide and types](../ai-structured/README.md) |
 | ai-decision | `DecisionController`, `DecisionClient`, `JevDecisionClient` | Map state/questions to HTTP JSON and validate typed answer identity/ranges | [Guide and types](../ai-decision/README.md) |
@@ -114,12 +115,12 @@ UI `/chat` belongs independently to RAG and agents and calls the respective feat
 | --- | --- | --- |
 | RAG chunks and vectors | PGVector, default `vector_store` table | Compose volume persists; deterministic IDs upsert identical chunks; no obsolete-chunk deletion |
 | RAG keyword index expression | SQL over PGVector `content` | English full-text semantics; same table, no separate search service |
-| Eval history | Bounded, synchronized in-memory `LinkedHashMap` | Process-local/not durable; `ai.eval.max-runs` (default 100) evicts oldest; reset via `DELETE /api/eval/runs`; case IDs depend on pair position |
-| Observation spans | DuckDB `trace_spans` | File persists; no retention/migrations; automatic spans use generated in-process trace/span IDs, start/stop timing, and ERROR status; manual inserts keep caller IDs |
+| Eval history | Bounded, synchronized in-memory `LinkedHashMap` | Process-local/not durable; `ai.eval.max-runs` (default 100) evicts oldest; reset via `DELETE /api/eval/runs`; case IDs depend on pair position; blank answers generated with `ai.eval.generation-concurrency` (default 4) and restored to input order |
+| Observation spans | DuckDB `trace_spans` | Stable file path persists; async single-writer sink flushes on REST write/shutdown; retention prunes by start time; no migration framework; automatic spans use generated in-process trace/span IDs, start/stop timing, and ERROR status; manual inserts keep caller IDs |
 | Agent conversations | No application conversation store | Each request is independent; conditional session-memory plan: [issue #47](plans/47-session-memory-migration.md), not implemented |
 | Structured/media/decision results | Returned by request | No application persistence implemented |
 
-The shared Eval harness creates immutable list copies and deterministic grades; model generation and external I/O remain in Demo services. Decision state copies are shallow; arbitrary nested values remain caller-owned objects.
+The shared Eval harness creates immutable list copies and deterministic grades; bounded-parallel model generation and external I/O remain in Demo services. Decision state copies are shallow; arbitrary nested values remain caller-owned objects.
 
 ## 7. Verification matrix
 
@@ -128,13 +129,13 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | ai-common | Criterion/report/harness unit tests | Semantic quality of arbitrary custom criteria |
 | ai-rag | Pure RRF/reranker unit tests (no Docker/model); `@Tag("docker")` PGVector Testcontainers ETL/query/multi-chunk tests with fixed embeddings and mock chat; separate DB-free smoke/UI tests | Real embedding relevance, live model grounding quality |
 | ai-agents | Mock-backed REST/catalog tests; local calculator tests; mocked-model SSE token/done/error contract tests; real local MCP SSE handshake test; context/UI | Live provider streaming behavior, arbitrary live MCP peer topology, actual model tool-call selection |
-| ai-eval | Mock-backed grading/generation/history/regression REST tests | Durable/concurrent experiment tracking or model-quality metrics |
-| ai-observability | DuckDB insert/query REST and tag/record tests; automatic handler correlation/timing/error tests; context | Distributed trace-context propagation or cross-JVM collection |
+| ai-eval | Mock-backed grading/generation/history/regression REST tests; focused bounded-concurrency/order unit test | Durable/concurrent experiment tracking or model-quality metrics |
+| ai-observability | DuckDB insert/query REST and tag/record tests; retention and service-name tests; automatic handler correlation/timing/error and stop-without-start tests; context | Distributed trace-context propagation or cross-JVM collection |
 | ai-multimodal | Mock-backed contracts for all four modalities, option mapping (dimensions/voice/format/speed/MIME-derived transcription filenames), revised-prompt metadata, and invalid input | Codec compatibility, live vision quality, provider support for dimensions/voices/formats |
 | ai-structured | Mock-backed REST conversion/validation; record constraints; context | Factual extraction accuracy or every provider's strict-schema support |
 | ai-decision | DTO fields/state copy; context/ping/validation; stubbed-client REST success and 502/504 mapping; MockWebServer contract tests for request/response mapping, aliases, identity/range validation, non-2xx, invalid JSON, and timeout | Live vendor contract/endpoint semantics, calibrated probabilities, provider portability, and standard `DecisionModel` interoperability |
 
-Run `./mvnw test` for the whole reactor; Docker is required for the RAG tests tagged `docker`. They provision their own database rather than using Compose. Without Docker use `./mvnw test -DexcludedGroups=docker -Dsurefire.failIfNoSpecifiedTests=false`; to run only that seam use `./mvnw -pl ai-rag -am test -Dgroups=docker -Dsurefire.failIfNoSpecifiedTests=false`. Pure RRF/reranker tests remain in the default no-Docker path. Named ChatModel mocks should stub `getOptions()` before constructing clients. See [implementation learnings](learnings/implementation-learnings.md) for pitfalls and [root run instructions](../README.md) for prerequisite installation.
+Run `./mvnw test` for the whole reactor; Docker is required for the RAG tests tagged `docker`. They provision their own database rather than using Compose. Without Docker use `./mvnw test -DexcludedGroups=docker -Dsurefire.failIfNoSpecifiedTests=false`; to run only that seam use `./mvnw -pl ai-rag -am test -Dgroups=docker -Dsurefire.failIfNoSpecifiedTests=false`. Pure RRF/reranker tests remain in the default no-Docker path. CI also runs Maven Enforcer (`validate`) and `dependency:analyze` as a non-failing report. Named ChatModel mocks should stub `getOptions()` before constructing clients. See [implementation learnings](learnings/implementation-learnings.md) for pitfalls and [root run instructions](../README.md) for prerequisite installation.
 
 ## 8. Reading and change workflow
 

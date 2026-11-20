@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -16,6 +18,7 @@ import dev.prasadgaikwad.springaiapps.common.UpstreamTimeoutException;
 import dev.prasadgaikwad.springaiapps.decision.DecisionPrimitives.DecisionResponse;
 import dev.prasadgaikwad.springaiapps.decision.DecisionPrimitives.ScoreAnswer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -33,11 +36,15 @@ class DecisionControllerTests {
     @Autowired
     MockMvc mockMvc;
 
+    @Autowired
+    ApplicationContext applicationContext;
+
     @MockitoBean
     DecisionClient client;
 
     @Test
-    void contextLoads() {
+    void contextLoadsWithoutProviderChatBeans() {
+        assertThat(this.applicationContext.getBeansOfType(ChatModel.class)).isEmpty();
     }
 
     @Test

@@ -26,9 +26,11 @@ import dev.prasadgaikwad.springaiapps.common.BadRequestException;
 public class ObservabilityController {
 
     private final TraceSpanRepository repository;
+    private final TraceSpanSink sink;
 
-    public ObservabilityController(TraceSpanRepository repository) {
+    public ObservabilityController(TraceSpanRepository repository, TraceSpanSink sink) {
         this.repository = repository;
+        this.sink = sink;
     }
 
     @PostMapping("/spans")
@@ -43,9 +45,11 @@ public class ObservabilityController {
         if (tags.containsKey(null) || tags.containsValue(null)) {
             throw new BadRequestException("'tags' must not contain null keys or values");
         }
-        return repository.save(request.traceId(), request.parentSpanId(), request.name(), request.kind(),
+        TraceSpan span = sink.write(null, request.traceId(), request.parentSpanId(), request.name(), request.kind(),
                 request.startTime() == null ? java.time.Instant.now() : request.startTime(),
-                request.endTime(), tags);
+                request.endTime(), tags, "OK");
+        sink.flush();
+        return span;
     }
 
     @GetMapping("/spans")

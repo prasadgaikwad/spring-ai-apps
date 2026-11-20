@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,14 +21,23 @@ class DuckDbObservationHandlerTest {
 
     private TraceSpanRepository repository;
 
+    private TraceSpanSink sink;
+
     private ObservationRegistry registry;
 
     @BeforeEach
     void setUp() {
-        DataSource dataSource = new DuckDbConfig().traceDataSource(new TraceProperties("jdbc:duckdb:"));
-        this.repository = new TraceSpanRepository(dataSource);
+        TraceProperties properties = new TraceProperties("jdbc:duckdb:", 7);
+        DataSource dataSource = new DuckDbConfig().traceDataSource(properties);
+        this.repository = new TraceSpanRepository(dataSource, new ObservabilityProperties("ai-observability"));
+        this.sink = new TraceSpanSink(this.repository, properties);
         this.registry = ObservationRegistry.create();
-        this.registry.observationConfig().observationHandler(new DuckDbObservationHandler(this.repository));
+        this.registry.observationConfig().observationHandler(new DuckDbObservationHandler(this.sink));
+    }
+
+    @AfterEach
+    void tearDown() {
+        this.sink.destroy();
     }
 
     @Test
@@ -40,6 +50,7 @@ class DuckDbObservationHandlerTest {
         Thread.sleep(25);
         child.stop();
         parent.stop();
+        this.sink.flush();
 
         List<TraceSpan> spans = this.repository.find(null, null, 10);
         assertThat(spans).hasSize(2);
@@ -67,9 +78,25 @@ class DuckDbObservationHandlerTest {
         Observation observation = Observation.start("failing.operation", this.registry);
         observation.error(new IllegalStateException("boom"));
         observation.stop();
+        this.sink.flush();
 
         TraceSpan span = this.repository.find(null, "failing.operation", 10).getFirst();
         assertThat(span.status()).isEqualTo("ERROR");
         assertThat(span.tags()).containsEntry("error", "IllegalStateException");
+    }
+
+    @Test
+    void stopWithoutStartWritesZeroLengthSpanWithoutRetainingState() {
+        Observation.createNotStarted("orphan.operation", this.registry).stop();
+        this.sink.flush();
+
+        List<TraceSpan> spans = this.repository.find(null, "orphan.operation", 10);
+        assertThat(spans).hasSize(1);
+        TraceSpan span = spans.getFirst();
+        assertThat(span.id()).isNotBlank();
+        assertThat(span.traceId()).isNotBlank();
+        assertThat(span.parentSpanId()).isNull();
+        assertThat(span.status()).isEqualTo("OK");
+        assertThat(span.durationMs()).isZero();
     }
 }

@@ -9,7 +9,7 @@ mvn -pl ai-common -am install -DskipTests
 mvn -pl ai-eval spring-boot:run
 ```
 
-See the [root setup](../README.md) for profiles and credentials. Supplied non-blank answers are graded without contacting a model; null, empty, or whitespace-only answers trigger the active ChatModel. The shared harness itself accepts empty answers, but this REST service treats them as requests for generation.
+See the [root setup](../README.md) for profiles and credentials. Supplied non-blank answers are graded without contacting a model; null, empty, or whitespace-only answers trigger the active ChatModel. Blank answers are generated with bounded parallelism (`ai.eval.generation-concurrency`, default `4`) and restored to input order before grading. The shared harness itself accepts empty answers, but this REST service treats them as requests for generation.
 
 ## Public contract and a deterministic example
 
@@ -35,9 +35,10 @@ Non-empty `pairs` and `criteria` are required. Every question must contain text.
 flowchart TD
     R[EvalController: run request] --> V[Validate pairs and criterion specs]
     V --> B{Answer blank?}
-    B -->|Yes| G[ChatClient generates answer]
+    B -->|Yes| G[Bounded-parallel ChatClient generation]
     B -->|No| P[Use supplied answer]
-    G --> C[Build case IDs from pair positions]
+    G --> O1[Restore answers to input order]
+    O1 --> C[Build case IDs from pair positions]
     P --> C
     C --> H[EvalHarness.run]
     H --> D[Compare with most recent report]
@@ -47,8 +48,8 @@ flowchart TD
 
 Case IDs are `case-0`, `case-1`, etc. Regression comparison uses the **most recent run**, not a user-selected baseline. Keep pair ordering and meaning stable across runs: reordering questions compares unrelated pairs at the same position. To see a regression, repeat the example with a non-blank answer that omits `PGVector`; the POST response then lists `case-0`.
 
-History is process-local, bounded, and synchronized for concurrent access. It is **not** persisted across restarts. Retention is controlled by `ai.eval.max-runs` (default `100`); when the limit is exceeded, the oldest retained runs are evicted. `DELETE /api/eval/runs` clears retained history. Regression comparison uses the **most recent retained run** at the time a new run is stored, so concurrent submissions may compare against different baselines; history structure remains consistent. Only the POST result carries the immediate regression diff; fetching a run does not recompute or retain that diff. Reports carry questions/grades, not generated answer text. These are reference-demo semantics, not a durable experiment-tracking service.
+History is process-local, bounded, and synchronized for concurrent access. It is **not** persisted across restarts. Retention is controlled by `ai.eval.max-runs` (default `100`); when the limit is exceeded, the oldest retained runs are evicted. Blank-answer generation concurrency is capped by `ai.eval.generation-concurrency` (default `4`, environment override `AI_EVAL_GENERATION_CONCURRENCY`); model failures still surface as 502/504. `DELETE /api/eval/runs` clears retained history. Regression comparison uses the **most recent retained run** at the time a new run is stored, so concurrent submissions may compare against different baselines; history structure remains consistent. Only the POST result carries the immediate regression diff; fetching a run does not recompute or retain that diff. Reports carry questions/grades, not generated answer text. These are reference-demo semantics, not a durable experiment-tracking service.
 
 ## Tests and further reading
 
-`mvn -pl ai-eval -am test` verifies supplied-answer grading, generated answers, regression detection, history, and invalid requests through MockMvc with a mocked ChatModel. The shared [Eval harness guide](../ai-common/README.md) covers criterion matching, summary invariants, and report comparison. [ADR-0004](../docs/adr/0004-eval-harness-in-ai-common.md) records the model-free core boundary.
+`mvn -pl ai-eval -am test` verifies supplied-answer grading, generated answers, bounded parallel generation and input-order preservation (focused unit test), regression detection, history, and invalid requests through MockMvc with a mocked ChatModel. The shared [Eval harness guide](../ai-common/README.md) covers criterion matching, summary invariants, and report comparison. [ADR-0004](../docs/adr/0004-eval-harness-in-ai-common.md) records the model-free core boundary.

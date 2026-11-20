@@ -16,18 +16,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,traces
+        include: health,info,metrics
   observations:
     key-values:
       service: ai-observability
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0
+
+ai:
+  observability:
+    service-name: ai-observability
 
 trace:
   duckdb:
-    url: jdbc:duckdb:./data/ai-observability-traces.duckdb
+    url: jdbc:duckdb:${user.home}/.spring-ai-apps/ai-observability/traces.duckdb
+    retention-days: 7
 
 springdoc:
   api-docs:
