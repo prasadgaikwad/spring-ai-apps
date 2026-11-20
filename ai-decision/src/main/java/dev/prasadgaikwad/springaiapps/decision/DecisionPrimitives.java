@@ -5,7 +5,8 @@ import java.util.Map;
 
 /**
  * Decision model primitives: System One/Jev evaluate state and return typed answers
- * (Choice, Score, Noul) with calibrated probabilities — not free-form text.
+ * (Choice, Score, Noul) rather than free-form text. Probability fields carry raw
+ * provider-reported values; their presence does not establish calibration.
  */
 public class DecisionPrimitives {
 
@@ -44,11 +45,11 @@ public class DecisionPrimitives {
         String questionId();
     }
 
-    /** A selection among provided choices with calibrated probability. */
+    /** A selection among provided choices with a provider-reported probability value. */
     public record ChoiceAnswer(String questionId, String selectedChoiceId, Double probability) implements DecisionAnswer {
     }
 
-    /** A numeric score with calibrated probability/uncertainty. */
+    /** A numeric score with a provider-reported probability/uncertainty value. */
     public record ScoreAnswer(String questionId, Double score, Double probability) implements DecisionAnswer {
     }
 
