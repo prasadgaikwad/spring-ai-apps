@@ -6,7 +6,7 @@
 
 **Evidence versions:** Spring AI `2.1.0-RC2`, Spring Boot `4.2.0-RC2`, TypeSafe Java SDK `0.4.0`, Java 25.
 
-**Committed baseline:** `main` remains on Spring AI `2.0.2` / Spring Boot `4.1.2`. The RC2 prototype ran in a detached worktree and is not part of the default build.
+**Committed baseline at the time:** `main` was on Spring AI `2.0.2` / Spring Boot `4.1.2`. The RC2 prototype ran in a detached worktree and is not part of the default build. #36 later moved the build to GA `2.1.0` / `4.2.0` and kept the custom adapter.
 
 Tracking: [#46](https://github.com/prasadgaikwad/spring-ai-apps/issues/46), parent [#36](https://github.com/prasadgaikwad/spring-ai-apps/issues/36).
 

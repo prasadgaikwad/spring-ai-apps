@@ -57,7 +57,7 @@ flowchart BT
     Demo --> Ollama[Ollama / OpenAI / Anthropic starters declared per chat demo]
 ```
 
-The parent pins Boot 4.1.2, Spring AI 2.0.2, Java 25, Springdoc 3.2.0, Testcontainers 2.0.3, DuckDB JDBC 1.1.3, and MockWebServer 4.12.0. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`. Planning for the next Boot/Spring AI line is tracked in the [Spring Boot 4.2 / Spring AI 2.1 upgrade plan](upgrades/spring-boot-4.2-spring-ai-2.1.md); the plan is not a claim that those versions are current.
+The parent pins Boot 4.2.0, Spring AI 2.1.0, Java 25, Springdoc 3.2.0, Testcontainers 2.0.3, DuckDB JDBC 1.1.3, and MockWebServer 4.12.0. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`. The [Spring Boot 4.2 / Spring AI 2.1 upgrade](upgrades/spring-boot-4.2-spring-ai-2.1.md) records the GA bump and its verification limits.
 
 Shared code is configuration/error translation, the Spring AI model API, and `common.eval`, not a shared persistence or business-service layer. Six Spring AI demos declare provider starters; `ai-decision` uses WebClient with no `ChatModel` beans and separate configuration. Shared configuration is discovered through the demo's component scan. No shared prompt-template library currently exists despite the original intended scope.
 

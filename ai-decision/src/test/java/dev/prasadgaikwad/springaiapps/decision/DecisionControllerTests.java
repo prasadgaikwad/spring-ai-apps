@@ -55,6 +55,15 @@ class DecisionControllerTests {
     }
 
     @Test
+    void apiDocsResponds() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists());
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void decideRejectsEmptyQuestions() throws Exception {
         mockMvc.perform(post("/api/decision/decide")
                         .contentType(MediaType.APPLICATION_JSON)

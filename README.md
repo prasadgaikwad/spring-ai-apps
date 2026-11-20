@@ -106,7 +106,7 @@ CI runs on every push and pull request with Temurin 25 and the Maven wrapper. It
 
 ## Architecture
 
-- **Parent**: `spring-boot-starter-parent` 4.1.2, `spring-ai-bom` 2.0.2
+- **Parent**: `spring-boot-starter-parent` 4.2.0, `spring-ai-bom` 2.1.0
 - **Root package**: `dev.prasadgaikwad.springaiapps.*` (Java forbids hyphens in package names)
 - **Provider portability**: Controlled via profiles; see [ADR-0001](docs/adr/0001-provider-portability-profiles-ollama-default.md)
 - **Shared plumbing**: Lives in `ai-common`; see [ADR-0002](docs/adr/0002-monorepo-shared-ai-common-module.md)
@@ -123,9 +123,9 @@ CI runs on every push and pull request with Temurin 25 and the Maven wrapper. It
 
 ## Spikes, upgrades, and plans
 
-These are time-bound notes, not current API contracts or shipped changes:
+These are time-bound notes; only the upgrade record describes a shipped dependency change, while the spikes and plans remain evaluations rather than current API contracts:
 
-- [Spring Boot 4.2 / Spring AI 2.1 upgrade plan](docs/upgrades/spring-boot-4.2-spring-ai-2.1.md) — planning/spike only; `main` keeps Boot 4.1.2 / Spring AI 2.0.2
+- [Spring Boot 4.2 / Spring AI 2.1 upgrade](docs/upgrades/spring-boot-4.2-spring-ai-2.1.md) — GA upgrade completed; parent pins Boot 4.2.0 / Spring AI 2.1.0
 - [MCP `MODERN` protocol spike (#45)](docs/spikes/45-mcp-modern-protocol.md) — spike complete; recommendation is to defer adoption
 - [Spring AI `DecisionModel` evaluation (#46)](docs/spikes/46-decision-model-evaluation.md) — evaluation complete; keep the custom Jev adapter
 - [Session-memory migration plan (#47)](docs/plans/47-session-memory-migration.md) — conditional and not applicable today; no migration implemented

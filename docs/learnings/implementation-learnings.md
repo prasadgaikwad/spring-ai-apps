@@ -9,6 +9,7 @@ These findings come from the implemented use cases and source/test review for is
 - **One process per demo.** Every demo defaults to port 8080; assign `server.port` for concurrent runs. A classpath dependency does not connect processes or send observations to the observability demo.
 - **Read code before drawing a diagram.** The actual agent route is `/api/agents/ask`, not `/api/agents/chat`; RAG has `QueryController`, not a `RagController`; DuckDB's default path is under `${user.home}/.spring-ai-apps/ai-observability/`. A small diagram with wrong names is worse than a source-linked explanation.
 - **Separate intent, implementation, and verification.** The initial spec described six skeletons and future work; those passages are historical. The current parent has seven demos. A passing mock-backed test does not verify an external API or model capability.
+- **GA dependency pair.** The parent now pins Boot `4.2.0` / Spring AI `2.1.0`, which resolves MCP SDK `2.2.0` and Anthropic SDK `3.8.0`; springdoc stays at `3.2.0` and still serves `/v3/api-docs` and Swagger UI in all seven modules. Live providers and MCP peers remain untested; modern MCP, session memory, and standard `DecisionModel` adoption remain separate decisions.
 
 ## Shared configuration and ai-common
 

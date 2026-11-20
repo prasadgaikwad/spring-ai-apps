@@ -45,4 +45,13 @@ class AiStructuredApplicationTests {
                 .andExpect(jsonPath("$.module").value("ai-structured"))
                 .andExpect(jsonPath("$.status").value("ok"));
     }
+
+    @Test
+    void apiDocsResponds() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists());
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+    }
 }

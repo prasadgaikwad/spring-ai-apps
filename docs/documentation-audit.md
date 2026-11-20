@@ -65,8 +65,8 @@ This section supersedes claims in the frozen snapshot above; the original text a
 - **RAG retrieval seams (#53)**: pure RRF/reranker unit tests cover fusion, ties, dedup, precedence, limits, and lexical coverage. Docker-backed tests tagged `docker` include a multi-chunk Testcontainers case for order, idempotent upsert, and source propagation; they are excluded from the no-Docker command and are not live-provider validation.
 - **Eval history**: bounded by `ai.eval.max-runs` (environment override `AI_EVAL_MAX_RUNS`), synchronized, and process-local, with default `100` in both source and YAML. It evicts oldest runs and is not durable. Blank answers use bounded parallelism via `ai.eval.generation-concurrency` (default `4` in source and YAML) and are restored to input order before grading.
 - **MCP client starter**: present in `ai-agents/pom.xml`; server and client are disabled by default in `application.yml`, and no peer connection is configured.
-- **Version pins**: root `pom.xml` pins Boot `4.1.2` / Spring AI `2.0.2`; ADR-0002 records Boot `4.1.1` / Spring AI `2.0.1` as the original baseline.
-- **Upgrade planning**: the [upgrade plan](upgrades/spring-boot-4.2-spring-ai-2.1.md) no longer conditions streaming tests on an unmerged branch and treats all seven REST demos as the springdoc gate.
+- **Version pins at that time**: root `pom.xml` pinned Boot `4.1.2` / Spring AI `2.0.2`; ADR-0002 records Boot `4.1.1` / Spring AI `2.0.1` as the original baseline. Superseded by the GA pins below.
+- **Upgrade planning at that time**: the [upgrade note](upgrades/spring-boot-4.2-spring-ai-2.1.md) no longer conditions streaming tests on an unmerged branch and treats all seven REST demos as the springdoc gate. It now records the completed GA upgrade.
 - **API and navigation**: [architecture](architecture.md) lists `DELETE /api/eval/runs`; the root [README](../README.md) links the upgrade plan, spikes #45/#46, plan #47, and the [2026-11-17 application review](application-review-2026-11-17.md) with status labels.
 
 ## Post-#57 status
@@ -81,3 +81,14 @@ This section records the P3 cleanup tranche; the frozen validation figures above
 - **Environment sample**: empty cloud/Jev keys are commented out, with commented eval/observability/port tunables and a warning that blank Jev keys are logged at startup and send no Authorization header.
 
 These changes are local mock/infrastructure verification only. No live provider, Jev, or tracing backend behavior is established.
+
+## Post-#36 status (GA upgrade)
+
+This section supersedes the earlier pin and planning notes; the frozen validation figures above are not rewritten.
+
+- **Version pins**: root `pom.xml` pins Boot `4.2.0` / Spring AI `2.1.0`, with `springdoc` unchanged at `3.2.0`, Testcontainers at `2.0.3`, and Java 25. ADR-0002 keeps `4.1.1` / `2.0.1` only as the original baseline.
+- **Upgrade record**: [Spring Boot 4.2 / Spring AI 2.1](upgrades/spring-boot-4.2-spring-ai-2.1.md) changed from an RC plan to a GA upgrade record. Parent and BOM moved together; Enforcer convergence and compile passed with no suppressions.
+- **springdoc gate**: app-context tests in all seven modules now assert both `/v3/api-docs` and `/swagger-ui/index.html`. They pass on Boot 4.2 / Framework 7.1 with springdoc `3.2.0`; no dependency bump was needed.
+- **Dependency tree**: Spring AI `2.1.0` resolves MCP SDK `2.2.0` and Anthropic SDK `3.8.0`. `spring-ai-systemone` and `spring-ai-autoconfigure-model-chat-memory` remain on the six chat demos; `ai-decision` still has no `ChatModel` beans.
+- **Unchanged boundaries**: `DecisionClient`/`ai.decision.*`, disabled MCP defaults, and the #47 no-session-migration decision were not altered. The `getDefaultOptions()` stubs touched by the upgrade now use `getOptions()`.
+- **Verification limits**: the no-Docker reactor tests pass locally (176 tests); PGVector/Testcontainers coverage passed in CI run `44836550600` (`docker-integration`). Live OpenAI/Anthropic/Ollama and Jev calls, MCP peer connections, and modern MCP adoption remain untested or out of scope.

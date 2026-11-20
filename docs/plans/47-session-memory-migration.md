@@ -2,9 +2,9 @@
 
 **Status:** conditional; **not applicable today**. No code migration is planned until a demo adds multi-turn conversation memory, or until the deprecated `ChatMemory` API must be removed before Spring AI 3.0.
 
-**Last reviewed:** 2026-11-16
+**Last reviewed:** 2026-11-20 against Spring AI `2.1.0` GA while completing #36.
 
-**Evidence version:** Spring AI `2.1.0-RC2` documentation and APIs. Re-check names and properties when Spring AI 2.1 reaches GA; the module baseline remains on `2.0.2` until the upgrade in #36.
+**Evidence version:** the original evaluation used Spring AI `2.1.0-RC2` documentation and APIs. GA is now the module baseline, but the detailed names and properties below have not been re-verified; the checklist remains a precondition for any future implementation.
 
 Tracking: [#47](https://github.com/prasadgaikwad/spring-ai-apps/issues/47), parent [#36](https://github.com/prasadgaikwad/spring-ai-apps/issues/36).
 
@@ -221,7 +221,7 @@ All tests use mocks/local infrastructure; no vendor call is required. Add tests 
 
 ## GA re-check checklist
 
-This plan used the `2.1.0-RC2` docs because 2.1 GA is not available. Before implementation, re-check at GA:
+This plan was written from the `2.1.0-RC2` docs. Although #36 moved the build to `2.1.0` GA, the session API is still unused, so the following checks remain open before any implementation:
 
 - [ ] Artifact names: `spring-ai-session`, `spring-ai-session-advisor`, `spring-ai-session-jdbc`, `spring-ai-starter-model-session-jdbc`.
 - [ ] Property names/defaults: `spring.ai.session.time-to-live`, `allow-system-messages`, `repository.jdbc.initialize-schema`, `repository.jdbc.schema`, `indexed-attributes`.

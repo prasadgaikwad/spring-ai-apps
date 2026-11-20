@@ -6,7 +6,7 @@
 
 **Evidence versions:** Spring Boot `4.2.0-RC2`, Spring AI `2.1.0-RC2`, MCP Java SDK `2.2.0-M2`, Java 25.
 
-**Committed baseline:** `main` remains on Spring Boot `4.1.2` / Spring AI `2.0.2`. This note records a detached-worktree spike; it does not change the parent build, the module dependencies, or the MCP defaults.
+**Committed baseline at the time:** `main` was on Spring Boot `4.1.2` / Spring AI `2.0.2`. This note records a detached-worktree spike; it did not change the parent build, the module dependencies, or the MCP defaults. #36 later moved the build to GA `4.2.0` / `2.1.0` and left the MCP defaults unchanged.
 
 Tracking: [#45](https://github.com/prasadgaikwad/spring-ai-apps/issues/45), parent [#36](https://github.com/prasadgaikwad/spring-ai-apps/issues/36).
 
