@@ -2,6 +2,7 @@ package dev.prasadgaikwad.springaiapps.rag;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * (read → split → embed → store) is deterministic and offline. Asserts the ingested
  * chunks actually land in the Vector store.
  */
+@Tag("docker")
 @AutoConfigureMockMvc
 class DocumentIngestionIntegrationTests extends AbstractRagIntegrationTest {
 

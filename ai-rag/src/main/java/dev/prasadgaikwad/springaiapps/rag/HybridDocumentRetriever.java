@@ -60,7 +60,7 @@ public final class HybridDocumentRetriever implements DocumentRetriever {
         Assert.notNull(query, "query cannot be null");
         List<Document> semantic = this.semanticRetriever.retrieve(query);
         List<Document> keyword = keywordSearch(query.text());
-        return reciprocalRankFusion(semantic, keyword);
+        return reciprocalRankFusion(semantic, keyword, this.topK);
     }
 
     /**
@@ -84,7 +84,7 @@ public final class HybridDocumentRetriever implements DocumentRetriever {
      * Documents found by both retrievers accumulate both contributions; the semantic
      * copy wins on ties so fused documents keep their metadata.
      */
-    private List<Document> reciprocalRankFusion(List<Document> semantic, List<Document> keyword) {
+    static List<Document> reciprocalRankFusion(List<Document> semantic, List<Document> keyword, int topK) {
         Map<String, Double> scores = new LinkedHashMap<>();
         Map<String, Document> documentsById = new LinkedHashMap<>();
         for (int rank = 0; rank < semantic.size(); rank++) {
@@ -96,7 +96,7 @@ public final class HybridDocumentRetriever implements DocumentRetriever {
         // Stream.sorted is stable, so equal scores keep first-seen (semantic-first) order.
         return scores.entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .limit(this.topK)
+                .limit(topK)
                 .map(entry -> documentsById.get(entry.getKey()))
                 .toList();
     }

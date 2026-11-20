@@ -31,7 +31,7 @@ The REST layer differs from the shared core: blank answers trigger generation, I
 - **Keep embeddings compatible.** Model/provider changes may require dimensions/schema changes and fresh ingestion. RAG's base dimension is 768; OpenAI profile defaults do not automatically resize the table. Anthropic chat has no corresponding shared embedding alias.
 - **Hybrid SQL is explicit schema coupling.** The keyword leg accesses PGVector `content` with English full-text functions because metadata filters cannot express content search. Preserve configured table/schema compatibility. RRF fuses ranks, avoiding raw-score calibration, and the lexical reranker is deterministic rather than learned.
 - **Grounding is a model instruction.** The advisor supplies context and the service returns retrieved chunks. This is useful evidence, not a truth guarantee. Fixed-vector/mock-model tests prove flow and source propagation, not embedding relevance.
-- **Smoke and integration are different.** DB-free application tests substitute services and exclude database auto-configurations. Testcontainers tests use their own PGVector instance; starting Compose is not their setup step. Docker must be available for the full reactor.
+- **Smoke, pure logic, and integration are different.** DB-free application tests substitute services and exclude database auto-configurations; RRF/reranker unit tests exercise fusion and coverage logic without any infrastructure. Testcontainers tests tagged `docker` use their own PGVector instance; starting Compose is not their setup step. Docker must be available for the full reactor, or exclude the tag.
 
 ## Agents, tools, and MCP
 

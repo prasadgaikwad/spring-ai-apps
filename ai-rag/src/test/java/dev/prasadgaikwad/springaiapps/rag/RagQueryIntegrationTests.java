@@ -2,6 +2,7 @@ package dev.prasadgaikwad.springaiapps.rag;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -36,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * observably: the ingested text and the answer-only-from-context instruction must reach
  * the model.
  */
+@Tag("docker")
 @AutoConfigureMockMvc
 class RagQueryIntegrationTests extends AbstractRagIntegrationTest {
 
