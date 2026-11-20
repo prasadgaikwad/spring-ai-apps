@@ -12,7 +12,7 @@
 
     <artifactId>ai-common</artifactId>
     <name>ai-common</name>
-    <description>Shared Vector store config, Eval harness, prompt templates, and common REST/error handling used by the Demo modules.</description>
+    <description>Shared configuration, Eval harness, and common REST/error handling used by the Demo modules.</description>
 
     <dependencies>
         <dependency>
@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-ollama</artifactId>
+            <artifactId>spring-ai-model</artifactId>
         </dependency>
 
         <dependency>

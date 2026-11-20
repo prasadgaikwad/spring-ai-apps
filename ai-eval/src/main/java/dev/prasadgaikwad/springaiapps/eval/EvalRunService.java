@@ -6,6 +6,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import org.springframework.ai.chat.client.ChatClient;
@@ -24,9 +28,10 @@ import dev.prasadgaikwad.springaiapps.common.eval.EvalReport;
 
 /**
  * Orchestrates an Eval run: generates answers for pairs with a blank
- * {@code answer} via the configured {@code ChatModel}, grades everything with the
- * shared {@link EvalHarness}, diffs against the previous run for regressions, and
- * keeps a bounded, thread-safe in-memory history of runs.
+ * {@code answer} with bounded parallelism via the configured {@code ChatModel}, grades
+ * everything with the shared {@link EvalHarness}, diffs against the previous run for
+ * regressions, and keeps a bounded, thread-safe in-memory history of runs. Input order
+ * is preserved regardless of generation completion order.
  */
 @Service
 public class EvalRunService {
@@ -34,13 +39,16 @@ public class EvalRunService {
     private final ChatClient chatClient;
     private final EvalHarness evalHarness;
     private final int maxRuns;
+    private final int generationConcurrency;
     private final Map<String, EvalReport> runs = new LinkedHashMap<>();
 
     public EvalRunService(ChatModel chatModel, EvalHarness evalHarness,
-            @Value("${ai.eval.max-runs:100}") int maxRuns) {
+            @Value("${ai.eval.max-runs:100}") int maxRuns,
+            @Value("${ai.eval.generation-concurrency:4}") int generationConcurrency) {
         this.chatClient = ChatClient.create(chatModel);
         this.evalHarness = evalHarness;
         this.maxRuns = maxRuns > 0 ? maxRuns : 100;
+        this.generationConcurrency = generationConcurrency > 0 ? generationConcurrency : 4;
     }
 
     /**
@@ -68,8 +76,11 @@ public class EvalRunService {
             criteria.add(spec.toCriterion());
         }
 
-        List<EvalCase> cases = new ArrayList<>(request.pairs().size());
-        for (int i = 0; i < request.pairs().size(); i++) {
+        int size = request.pairs().size();
+        String[] questions = new String[size];
+        String[] answers = new String[size];
+        List<Integer> blankIndices = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
             EvalRunRequest.QAPair pair = request.pairs().get(i);
             if (pair == null) {
                 throw new BadRequestException("Pair " + i + " must not be null");
@@ -78,12 +89,18 @@ public class EvalRunService {
             if (!StringUtils.hasText(question)) {
                 throw new BadRequestException("Pair " + i + " requires a non-blank 'question'");
             }
-            String answer = pair.answer();
-            if (!StringUtils.hasText(answer)) {
-                answer = generateAnswer(question);
+            questions[i] = question;
+            answers[i] = pair.answer();
+            if (!StringUtils.hasText(answers[i])) {
+                blankIndices.add(i);
             }
-            String id = "case-" + i;
-            cases.add(new EvalCase(id, question, answer));
+        }
+
+        generateAnswers(questions, answers, blankIndices);
+
+        List<EvalCase> cases = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            cases.add(new EvalCase("case-" + i, questions[i], answers[i] == null ? "" : answers[i]));
         }
 
         EvalReport report = evalHarness.run(cases, criteria);
@@ -147,6 +164,43 @@ public class EvalRunService {
             else {
                 break;
             }
+        }
+    }
+
+    private void generateAnswers(String[] questions, String[] answers, List<Integer> blankIndices) {
+        if (blankIndices.isEmpty()) {
+            return;
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(this.generationConcurrency);
+        try {
+            List<CompletableFuture<String>> futures = new ArrayList<>(blankIndices.size());
+            for (int index : blankIndices) {
+                final int questionIndex = index;
+                futures.add(CompletableFuture.supplyAsync(() -> generateAnswer(questions[questionIndex]), executor));
+            }
+            for (int futureIndex = 0; futureIndex < futures.size(); futureIndex++) {
+                answers[blankIndices.get(futureIndex)] = await(futures.get(futureIndex));
+            }
+        }
+        finally {
+            executor.shutdown();
+        }
+    }
+
+    private static String await(CompletableFuture<String> future) {
+        try {
+            return future.get();
+        }
+        catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new UpstreamServiceException("Evaluation model call interrupted", ex);
+        }
+        catch (ExecutionException ex) {
+            Throwable cause = ex.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new UpstreamServiceException("Evaluation model call failed", cause);
         }
     }
 

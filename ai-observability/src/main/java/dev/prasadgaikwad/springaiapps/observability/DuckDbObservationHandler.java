@@ -2,10 +2,10 @@ package dev.prasadgaikwad.springaiapps.observability;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 import org.springframework.stereotype.Component;
 
@@ -25,18 +25,19 @@ import io.micrometer.observation.ObservationView;
  * descendants inherit the nearest observed ancestor's trace ID and reference its span ID.
  * Start time is captured in {@link #onStart}, so stored durations measure wall-clock time
  * between the observation's start and stop rather than the stop instant. Errors set the
- * stored status to {@code ERROR}. This is not W3C/distributed trace-context propagation.
+ * stored status to {@code ERROR}. State uses weak keys, and rows are queued through
+ * {@link TraceSpanSink}; this is not W3C/distributed trace-context propagation.
  */
 @Component
 public class DuckDbObservationHandler implements ObservationHandler<Observation.Context> {
 
-    private final TraceSpanRepository repository;
+    private final TraceSpanSink sink;
 
     private final Map<Observation.Context, SpanState> states =
-            Collections.synchronizedMap(new IdentityHashMap<>());
+            Collections.synchronizedMap(new WeakHashMap<>());
 
-    public DuckDbObservationHandler(TraceSpanRepository repository) {
-        this.repository = repository;
+    public DuckDbObservationHandler(TraceSpanSink sink) {
+        this.sink = sink;
     }
 
     @Override
@@ -67,7 +68,7 @@ public class DuckDbObservationHandler implements ObservationHandler<Observation.
             tags.put("error", context.getError().getClass().getSimpleName());
         }
 
-        repository.save(state.spanId(), state.traceId(), state.parentSpanId(), context.getName(), "SPAN",
+        sink.write(state.spanId(), state.traceId(), state.parentSpanId(), context.getName(), "SPAN",
                 state.startTime(), end, tags, status);
     }
 

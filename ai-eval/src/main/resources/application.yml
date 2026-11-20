@@ -15,6 +15,7 @@ spring:
 ai:
   eval:
     max-runs: 100
+    generation-concurrency: 4
 
 springdoc:
   api-docs:

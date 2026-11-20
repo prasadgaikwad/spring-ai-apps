@@ -31,10 +31,12 @@ public class TraceSpanRepository {
 
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
+    private final String serviceName;
 
-    public TraceSpanRepository(DataSource traceDataSource) {
+    public TraceSpanRepository(DataSource traceDataSource, ObservabilityProperties properties) {
         this.dataSource = traceDataSource;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        this.serviceName = properties.serviceName();
     }
 
     /** Persists a manually supplied span with a generated row ID and {@code OK} status. */
@@ -46,32 +48,46 @@ public class TraceSpanRepository {
     /** Persists a span with a caller-selected span ID and status (insert or replace). */
     public TraceSpan save(String id, String traceId, String parentSpanId, String name, String kind,
                           Instant startTime, Instant endTime, Map<String, String> tags, String status) {
+        return persist(toSpan(id, traceId, parentSpanId, name, kind, startTime, endTime, tags, status));
+    }
+
+    /** Builds the row that would be persisted, without touching the database. */
+    public TraceSpan toSpan(String id, String traceId, String parentSpanId, String name, String kind,
+                            Instant startTime, Instant endTime, Map<String, String> tags, String status) {
         String spanId = StringUtils.hasText(id) ? id : UUID.randomUUID().toString();
-        String tagsJson = TraceSpan.toTagsJson(tags, objectMapper);
+        Instant end = endTime == null ? Instant.now() : endTime;
+        long duration = Math.max(0, end.toEpochMilli() - startTime.toEpochMilli());
+        String effectiveStatus = StringUtils.hasText(status) ? status : "OK";
+        return new TraceSpan(spanId, traceId, parentSpanId, name, kind, startTime, end, duration,
+                serviceName, effectiveStatus, tags);
+    }
+
+    /** Inserts or replaces an already-built span. */
+    public TraceSpan persist(TraceSpan span) {
+        String tagsJson = TraceSpan.toTagsJson(span.tags(), objectMapper);
         String sql = """
                 INSERT OR REPLACE INTO trace_spans
                 (id, trace_id, parent_span_id, name, kind, start_time, end_time, duration_ms, service_name, status, tags)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, spanId);
-            ps.setString(2, traceId);
-            ps.setString(3, parentSpanId);
-            ps.setString(4, name);
-            ps.setString(5, kind);
-            ps.setTimestamp(6, Timestamp.from(startTime));
-            Instant end = endTime == null ? Instant.now() : endTime;
-            ps.setTimestamp(7, Timestamp.from(end));
-            ps.setLong(8, Math.max(0, end.toEpochMilli() - startTime.toEpochMilli()));
-            ps.setString(9, "ai-observability");
-            ps.setString(10, StringUtils.hasText(status) ? status : "OK");
+            ps.setString(1, span.id());
+            ps.setString(2, span.traceId());
+            ps.setString(3, span.parentSpanId());
+            ps.setString(4, span.name());
+            ps.setString(5, span.kind());
+            ps.setTimestamp(6, Timestamp.from(span.startTime()));
+            ps.setTimestamp(7, Timestamp.from(span.endTime()));
+            ps.setLong(8, span.durationMs());
+            ps.setString(9, span.serviceName());
+            ps.setString(10, span.status());
             ps.setString(11, tagsJson);
             ps.executeUpdate();
         }
         catch (SQLException ex) {
             throw new IllegalStateException("Failed to persist trace span", ex);
         }
-        return findById(spanId);
+        return span;
     }
 
     /** Lists spans with optional filters, ordered by start time ascending. */
@@ -136,20 +152,16 @@ public class TraceSpanRepository {
         }
     }
 
-    private TraceSpan findById(String id) {
-        String sql = "SELECT * FROM trace_spans WHERE id = ?";
-        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRow(rs);
-                }
-            }
+    /** Deletes spans whose start time is older than the supplied cutoff. */
+    public int deleteOlderThan(Instant cutoff) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement ps = conn.prepareStatement(
+                "DELETE FROM trace_spans WHERE start_time < ?")) {
+            ps.setTimestamp(1, Timestamp.from(cutoff));
+            return ps.executeUpdate();
         }
         catch (SQLException ex) {
-            throw new IllegalStateException("Failed to fetch trace span", ex);
+            throw new IllegalStateException("Failed to prune trace spans", ex);
         }
-        throw new IllegalStateException("Span not found after insert: " + id);
     }
 
     private TraceSpan mapRow(ResultSet rs) throws SQLException {

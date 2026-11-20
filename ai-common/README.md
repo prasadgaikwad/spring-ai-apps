@@ -11,7 +11,7 @@ Shared configuration, REST errors, and the deterministic **Eval harness** used b
 | `ApiExceptionHandler` | Maps `BadRequestException` to 400, `ResourceNotFoundException` to 404, and other exceptions to 500 |
 | `common.eval` | Model-free criteria, grades, reports, and regression comparison |
 
-The current POM brings the Ollama starter and web infrastructure. Cloud starters are declared by the six Spring AI Demo modules. PGVector's starter belongs only to `ai-rag`; DuckDB belongs only to `ai-observability`. Prompt templates were part of the original intended shared scope, but there is currently no shared prompt-template library. See [ADR-0002](../docs/adr/0002-monorepo-shared-ai-common-module.md).
+The current POM brings the Spring AI model API and web infrastructure, not a provider starter. The six chat Demo modules declare their own Ollama/OpenAI/Anthropic starters; `ai-decision` uses WebClient and has no `ChatModel` beans. PGVector's starter belongs only to `ai-rag`; DuckDB belongs only to `ai-observability`. Prompt templates were part of the original intended shared scope, but there is currently no shared prompt-template library. See [ADR-0002](../docs/adr/0002-monorepo-shared-ai-common-module.md).
 
 Include `ai-common` in a Demo module's dependency list and component-scan `dev.prasadgaikwad.springaiapps.common` as well as the demo package. A dependency alone does not make sibling-package configurations discoverable.
 

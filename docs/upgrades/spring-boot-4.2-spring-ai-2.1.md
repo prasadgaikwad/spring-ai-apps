@@ -48,7 +48,7 @@ The spike did **not** keep any version changes. It only proves that the current 
 
 Observed RC2 dependency changes relevant to this repo:
 
-- `spring-ai-starter-model-ollama` now brings `spring-ai-systemone` and decision observation auto-configuration.
+- `spring-ai-starter-model-ollama` now brings `spring-ai-systemone` and decision observation auto-configuration. Since #57, only the six chat demos declare that starter; `ai-decision` depends on the model API through `ai-common` and loads no `ChatModel` beans.
 - `spring-ai-autoconfigure-model-chat-memory` is still on the classpath, but ChatMemory is deprecated for removal in Spring AI 3.0.
 - MCP SDK moves from `2.1.0` to `2.2.0-M2`.
 - Anthropic SDK moves from `2.72.0` to `3.4.0`.

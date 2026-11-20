@@ -82,7 +82,7 @@ class EvalRunServiceHistoryTest {
     }
 
     private static EvalRunService newService(int maxRuns) {
-        return new EvalRunService(mock(ChatModel.class), new EvalHarness(), maxRuns);
+        return new EvalRunService(mock(ChatModel.class), new EvalHarness(), maxRuns, 4);
     }
 
     private static EvalRunRequest requestWithAnswer(String answer) {

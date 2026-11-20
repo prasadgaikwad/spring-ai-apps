@@ -18,7 +18,7 @@ A model-based judge or Spring AI-specific evaluation abstraction would couple de
 
 The harness rejects duplicate IDs within a run. Manually constructed reports can contain duplicates; comparison takes the first baseline occurrence. `CaseReport` derives its passed flag, while a manually supplied `EvalReport` summary is not recomputed from cases. `Summary` validates non-negative/range/add-up checks, not every possible relationship to an externally supplied case list.
 
-`ai-eval` currently assigns positional case IDs and keeps a bounded, synchronized, process-local in-memory history. Retention is configured by `ai.eval.max-runs` (environment override `AI_EVAL_MAX_RUNS`), defaulting to `100` in both source and YAML; the oldest runs are evicted when the limit is exceeded. History is not durable across restarts. These are demo-level limitations rather than requirements of the shared harness. Regression IDs describe pass→fail only; they do not establish semantic answer quality.
+`ai-eval` may generate blank answers with bounded parallelism before calling the harness, but that orchestration stays outside the shared core. It currently assigns positional case IDs and keeps a bounded, synchronized, process-local in-memory history. Retention is configured by `ai.eval.max-runs` (environment override `AI_EVAL_MAX_RUNS`), defaulting to `100` in both source and YAML; the oldest runs are evicted when the limit is exceeded. History is not durable across restarts. These are demo-level limitations rather than requirements of the shared harness. Regression IDs describe pass→fail only; they do not establish semantic answer quality.
 
 ## Consequences
 - Reusable across demos with a clean secondary testing seam

@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,6 +33,9 @@ class TraceSinkIntegrationTests {
     @Autowired
     MockMvc mockMvc;
 
+    @Autowired
+    TraceSpanRepository repository;
+
     @Test
     void recordAndQuerySpans() throws Exception {
         String body = """
@@ -49,7 +53,8 @@ class TraceSinkIntegrationTests {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.traceId").value("trace-123"))
-                .andExpect(jsonPath("$.name").value("gen_ai.client.operation"));
+                .andExpect(jsonPath("$.name").value("gen_ai.client.operation"))
+                .andExpect(jsonPath("$.serviceName").value("ai-observability"));
 
         mockMvc.perform(get("/api/observability/spans").param("traceId", "trace-123"))
                 .andExpect(status().isOk())
@@ -111,5 +116,14 @@ class TraceSinkIntegrationTests {
                         .content("{\"traceId\":\"t1\",\"name\":\"span\",\"tags\":\"not-a-map\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+    }
+
+    @Test
+    void directSaveUsesConfiguredServiceName() {
+        Instant now = Instant.now();
+        TraceSpan span = this.repository.save("service-name-check", "trace-service", "config.span", "SPAN",
+                now, now, Map.of());
+
+        assertThat(span.serviceName()).isEqualTo("ai-observability");
     }
 }
