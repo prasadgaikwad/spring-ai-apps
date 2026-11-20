@@ -29,10 +29,13 @@ A multi-module Maven monorepo of Spring AI reference demos showcasing RAG, agent
 # Compile everything
 ./mvnw -B -DskipTests compile
 
-# Run tests that do not require Docker
-./mvnw -B test -Dtest='!DocumentIngestionIntegrationTests,!RagQueryIntegrationTests' -Dsurefire.failIfNoSpecifiedTests=false
+# Skip tests tagged `docker` (PGVector Testcontainers) when no daemon is available
+./mvnw -B test -DexcludedGroups=docker -Dsurefire.failIfNoSpecifiedTests=false
 
-# Run the full suite with Docker available (includes RAG PGVector integration tests)
+# Run only the Docker-backed RAG integration tests
+./mvnw -pl ai-rag -am test -Dgroups=docker -Dsurefire.failIfNoSpecifiedTests=false
+
+# Run the full suite with Docker available
 ./mvnw -B test
 ```
 

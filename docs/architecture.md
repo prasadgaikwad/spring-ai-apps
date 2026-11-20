@@ -126,7 +126,7 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | Module | Existing default checks | What those checks do not establish |
 | --- | --- | --- |
 | ai-common | Criterion/report/harness unit tests | Semantic quality of arbitrary custom criteria |
-| ai-rag | Real PGVector Testcontainers ETL/query tests with fixed embeddings and mock chat; separate DB-free smoke/UI tests | Real embedding relevance, live model grounding quality |
+| ai-rag | Pure RRF/reranker unit tests (no Docker/model); `@Tag("docker")` PGVector Testcontainers ETL/query/multi-chunk tests with fixed embeddings and mock chat; separate DB-free smoke/UI tests | Real embedding relevance, live model grounding quality |
 | ai-agents | Mock-backed REST/catalog tests; local calculator tests; mocked-model SSE token/done/error contract tests; real local MCP SSE handshake test; context/UI | Live provider streaming behavior, arbitrary live MCP peer topology, actual model tool-call selection |
 | ai-eval | Mock-backed grading/generation/history/regression REST tests | Durable/concurrent experiment tracking or model-quality metrics |
 | ai-observability | DuckDB insert/query REST and tag/record tests; automatic handler correlation/timing/error tests; context | Distributed trace-context propagation or cross-JVM collection |
@@ -134,7 +134,7 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | ai-structured | Mock-backed REST conversion/validation; record constraints; context | Factual extraction accuracy or every provider's strict-schema support |
 | ai-decision | DTO fields/state copy; context/ping/validation; stubbed-client REST success and 502/504 mapping; MockWebServer contract tests for request/response mapping, aliases, identity/range validation, non-2xx, invalid JSON, and timeout | Live vendor contract/endpoint semantics, calibrated probabilities, provider portability, and standard `DecisionModel` interoperability |
 
-Run `mvn test` for the whole reactor; Docker is required for RAG Testcontainers. They provision their own database rather than using Compose. Named ChatModel mocks should stub `getOptions()` before constructing clients. See [implementation learnings](learnings/implementation-learnings.md) for pitfalls and [root run instructions](../README.md) for prerequisite installation.
+Run `./mvnw test` for the whole reactor; Docker is required for the RAG tests tagged `docker`. They provision their own database rather than using Compose. Without Docker use `./mvnw test -DexcludedGroups=docker -Dsurefire.failIfNoSpecifiedTests=false`; to run only that seam use `./mvnw -pl ai-rag -am test -Dgroups=docker -Dsurefire.failIfNoSpecifiedTests=false`. Pure RRF/reranker tests remain in the default no-Docker path. Named ChatModel mocks should stub `getOptions()` before constructing clients. See [implementation learnings](learnings/implementation-learnings.md) for pitfalls and [root run instructions](../README.md) for prerequisite installation.
 
 ## 8. Reading and change workflow
 

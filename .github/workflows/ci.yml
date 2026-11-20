@@ -27,13 +27,12 @@ jobs:
         run: ./mvnw -B -DskipTests compile
 
       - name: Test without Docker-dependent RAG integration tests
-        # DocumentIngestionIntegrationTests and RagQueryIntegrationTests provision a
-        # PGVector Testcontainers instance. They are excluded here and remain runnable
-        # locally or in the separate Docker-enabled verification job below.
+        # Tests tagged `docker` provision a PGVector Testcontainers instance. They are
+        # excluded here and run in the separate Docker-enabled job below.
         run: |
-          echo "Skipping DocumentIngestionIntegrationTests and RagQueryIntegrationTests: they require a Docker daemon."
+          echo "Skipping tests tagged 'docker': they require a Docker daemon."
           ./mvnw -B test \
-            -Dtest='!DocumentIngestionIntegrationTests,!RagQueryIntegrationTests' \
+            -DexcludedGroups=docker \
             -Dsurefire.failIfNoSpecifiedTests=false
 
   docker-integration:
@@ -52,5 +51,5 @@ jobs:
       - name: Run RAG integration tests with Docker
         run: |
           ./mvnw -B -pl ai-rag -am test \
-            -Dtest='DocumentIngestionIntegrationTests,RagQueryIntegrationTests' \
+            -Dgroups=docker \
             -Dsurefire.failIfNoSpecifiedTests=false

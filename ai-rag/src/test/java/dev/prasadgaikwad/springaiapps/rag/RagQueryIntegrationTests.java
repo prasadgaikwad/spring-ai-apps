@@ -2,6 +2,7 @@ package dev.prasadgaikwad.springaiapps.rag;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -10,10 +11,14 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.rag.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * observably: the ingested text and the answer-only-from-context instruction must reach
  * the model.
  */
+@Tag("docker")
 @AutoConfigureMockMvc
 class RagQueryIntegrationTests extends AbstractRagIntegrationTest {
 
@@ -52,6 +58,18 @@ class RagQueryIntegrationTests extends AbstractRagIntegrationTest {
 
     @MockitoBean(name = "ollamaChatModel")
     ChatModel chatModel;
+
+    @Autowired
+    HybridDocumentRetriever hybridDocumentRetriever;
+
+    @Autowired
+    LexicalReranker lexicalReranker;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @Value("${spring.ai.vectorstore.pgvector.table-name:vector_store}")
+    String tableName;
 
     @Test
     void askQuestionReturnsGroundedAnswerFromRetrievedContext() throws Exception {
@@ -80,6 +98,40 @@ class RagQueryIntegrationTests extends AbstractRagIntegrationTest {
         String prompted = promptCaptor.getValue().getUserMessage().getText();
         assertThat(prompted).contains("Spring AI is the framework");
         assertThat(prompted).contains("Given the context information and no prior knowledge");
+    }
+
+    @Test
+    void multiChunkRetrievalReranksDedupesAndPropagatesSource() throws Exception {
+        stubFixedEmbeddingModel();
+        String quantum = "Quantum gardening explores lunar soil and ancient seeds in extreme conditions.";
+        String cooking = "Classical cooking relies on slow simmering sauces and carefully balanced herbs.";
+
+        ingest(quantum);
+        ingest(cooking);
+        ingest(quantum); // deterministic id -> upsert, not a second row
+
+        Long matchingChunks = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM " + tableName + " WHERE content ILIKE ?", Long.class, "%quantum gardening%");
+        assertThat(matchingChunks).isEqualTo(1L);
+
+        Query query = new Query("quantum gardening");
+        List<Document> retrieved = hybridDocumentRetriever.retrieve(query);
+        assertThat(retrieved).extracting(Document::getId).doesNotHaveDuplicates();
+        assertThat(retrieved).allSatisfy(document ->
+                assertThat(document.getMetadata().get("source")).asString().contains("inline-text"));
+
+        List<Document> reranked = lexicalReranker.process(query, retrieved);
+        assertThat(reranked).isNotEmpty();
+        assertThat(reranked.get(0).getText()).contains("Quantum gardening");
+    }
+
+    private void ingest(String text) throws Exception {
+        mockMvc.perform(post("/api/rag/ingest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"" + escape(text) + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"))
+                .andExpect(jsonPath("$.chunks").value(1));
     }
 
     private static String escape(String s) {

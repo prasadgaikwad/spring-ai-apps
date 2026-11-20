@@ -4,17 +4,18 @@ Document ingestion and grounded question answering over Postgres/PGVector, with 
 
 ## Run
 
-From the monorepo root, with Java 25, Maven, Docker, and Ollama available:
+From the monorepo root, with Java 25, the Maven wrapper, Docker, and Ollama available:
 
 ```bash
-mvn -pl ai-common -am install -DskipTests
+cp .env.example .env  # set a non-default SPRING_DATASOURCE_PASSWORD first
+./mvnw -pl ai-common -am install -DskipTests
 docker compose up -d
 ollama pull llama3.2
 ollama pull nomic-embed-text
-mvn -pl ai-rag spring-boot:run
+./mvnw -pl ai-rag spring-boot:run
 ```
 
-Ollama must be running. Compose starts `pgvector/pgvector:pg16` on localhost:5432, database `spring_ai_pgvector`, user/password `postgres`, and persists it in `pgvector-data`. See the [root guide](../README.md) for exporting environment variables and changing ports. Open `/chat` for UI or `/swagger-ui.html` for the API.
+Ollama must be running. Compose starts `pgvector/pgvector:pg16` bound to `127.0.0.1:5432`, database `spring_ai_pgvector`, credentials from `.env`, and persists it in `pgvector-data`. See the [root guide](../README.md) for exporting environment variables and changing ports. Open `/chat` for UI or `/swagger-ui.html` for the API.
 
 ## Public contract
 
@@ -100,4 +101,9 @@ The `openai` profile selects OpenAI chat and embedding aliases. Its default embe
 
 ## Tests and learnings
 
-`mvn -pl ai-rag -am test` requires Docker. `DocumentIngestionIntegrationTests` and `RagQueryIntegrationTests` use a real PGVector Testcontainer and fixed 768-dimensional embeddings; the query tests additionally mock the ChatModel. The application/UI smoke test excludes database auto-configuration and substitutes pipeline services. These verify ETL/query contracts and source propagation, not real embedding relevance or live model truthfulness. Deterministic IDs, schema coupling, and embedding migrations are covered in [implementation learnings](../docs/learnings/implementation-learnings.md).
+Two complementary seams are used:
+
+- **Pure logic (no Docker/model):** `HybridDocumentRetrieverTest` covers RRF score accumulation, rank ties, id-based dedup with semantic metadata precedence, `topK`, and empty legs; `LexicalRerankerTest` covers stopwords, coverage ordering, stable ties, case normalization, empty/all-stopword queries, and `maxDocuments`. Neither test touches a database or provider.
+- **Docker-backed retrieval (`@Tag("docker")`):** `DocumentIngestionIntegrationTests` and `RagQueryIntegrationTests` use a real PGVector Testcontainer and fixed 768-dimensional embeddings; the query tests mock the ChatModel. A multi-chunk case inside `RagQueryIntegrationTests` ingests two chunks, re-ingests one to prove idempotent upsert, then asserts unique ids, rerank order, and `source` metadata propagation through the real retriever/reranker. Run them with `./mvnw -pl ai-rag -am test -Dgroups=docker -Dsurefire.failIfNoSpecifiedTests=false`; omit them with `-DexcludedGroups=docker`.
+
+The application/UI smoke test excludes database auto-configuration and substitutes pipeline services. These seams verify ETL/query contracts, fusion, dedup, and source propagation, not real embedding relevance or live model truthfulness. Deterministic IDs, schema coupling, and embedding migrations are covered in [implementation learnings](../docs/learnings/implementation-learnings.md).
