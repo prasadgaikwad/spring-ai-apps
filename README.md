@@ -20,17 +20,20 @@ A multi-module Maven monorepo of Spring AI reference demos showcasing RAG, agent
 ### Prerequisites
 
 - Java 25 (Temurin)
-- Maven 3.9+
-- Docker (for Postgres/PGVector when running `ai-rag`)
+- Maven 3.9+ (or use the pinned `./mvnw` wrapper included in the repo)
+- Docker (for Postgres/PGVector when running the RAG integration tests)
 
 ### Build & Test
 
 ```bash
 # Compile everything
-mvn -DskipTests compile
+./mvnw -B -DskipTests compile
 
-# Run all tests
-mvn test
+# Run tests that do not require Docker
+./mvnw -B test -Dtest='!DocumentIngestionIntegrationTests,!RagQueryIntegrationTests' -Dsurefire.failIfNoSpecifiedTests=false
+
+# Run the full suite with Docker available (includes RAG PGVector integration tests)
+./mvnw -B test
 ```
 
 ### Provider Profiles
@@ -50,25 +53,53 @@ For local chat, run Ollama and pull `llama3.2`; RAG also needs `nomic-embed-text
 ### Running a Demo
 
 ```bash
-# Install the shared dependency and parent POM once (repeat after shared changes)
-mvn -pl ai-common -am install -DskipTests
+# Copy the environment sample and set a non-default database password before Compose
+cp .env.example .env
+# edit .env: SPRING_DATASOURCE_PASSWORD=...
 
-# Start RAG infrastructure and run just its executable module
+# Install the shared dependency and parent POM once (repeat after shared changes)
+./mvnw -pl ai-common -am install -DskipTests
+
+# Start RAG infrastructure (bound to 127.0.0.1) and run just its executable module
 docker compose up -d
-mvn -pl ai-rag spring-boot:run
+./mvnw -pl ai-rag spring-boot:run
 
 # Or run another demo, on a different port if RAG is still running
-mvn -pl ai-agents spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
+./mvnw -pl ai-agents spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
 ```
 
 Use `-am` for reactor build/test/install goals. Applying `spring-boot:run` to the entire selected reactor also invokes it on the non-executable parent/shared module. Each Demo module defaults to port 8080; run one at a time or override `server.port`. For OpenAI, prefix a run command with `SPRING_PROFILES_ACTIVE=openai` and export a real `OPENAI_API_KEY`.
 
 Each demo exposes:
 - REST APIs under `/api/<module>/...`
-- OpenAPI docs at `/v3/api-docs` (Swagger UI at `/swagger-ui.html` where configured)
+- OpenAPI docs at `/v3/api-docs` (Swagger UI at `/swagger-ui.html` where configured; both disabled in the `security` profile)
 - `GET /api/<module>/ping` for a simple module response (not a provider connectivity check)
 
 The full test suite requires Docker for RAG's PGVector Testcontainers tests. It does not require a manually started Compose database or real AI credentials. Successful mock-backed tests verify application contracts, not live-provider compatibility.
+
+## Local-only default and opt-in security
+
+These demos are **local reference applications, not production-hardened services**. By default they expose OpenAPI docs, do not require authentication, and bind local Compose PostgreSQL to `127.0.0.1`. Do not expose them to untrusted networks without additional review.
+
+The opt-in `security` profile applies demo-level guardrails to every module:
+
+```bash
+SPRING_PROFILES_ACTIVE=ollama,security ./mvnw -pl ai-eval spring-boot:run
+```
+
+Always include the provider profile (`ollama`, `openai`, or `anthropic`) alongside `security`; activating only `security` disables the default provider alias. `ai-decision` uses its Jev adapter and does not need a chat profile.
+
+In that profile:
+
+- Springdoc `/v3/api-docs` and Swagger UI are disabled.
+- Actuator exposure is reduced to `health` and `info` where Actuator is present.
+- `POST /api/**` requires either `X-API-Key: <key>` or HTTP Basic credentials.
+- Cross-origin requests are denied unless the exact origin is listed in `AI_SECURITY_ALLOWED_ORIGINS`.
+- `POST /api/**` is rate-limited per credential (or remote address) with a fixed one-minute window.
+
+Defaults are local demo values from `ai-common/src/main/resources/application-security.yml`: `AI_SECURITY_API_KEY=local-demo-key`, `AI_SECURITY_USERNAME=demo`, `AI_SECURITY_PASSWORD=local-demo-password`, empty origin allowlist, and `AI_SECURITY_RATE_LIMIT=60`. Override all of them for any non-local use. This is a simple guardrail, not a substitute for a real identity provider or gateway; model-backed flows still need upstream credential management and abuse controls.
+
+CI runs on every push and pull request with Temurin 25 and the Maven wrapper. It uses placeholder keys/mocks only and never requires real provider credentials. Enforcer rules require Java 25, Maven 3.9+, and dependency convergence; pinned overrides for known Spring AI/provider/springdoc conflicts live in the root `pom.xml`.
 
 ## Architecture
 
@@ -112,4 +143,4 @@ The diagrams describe separate applications, not a deployed service mesh. In par
 
 ## License
 
-See repository for license information.
+[MIT](LICENSE).

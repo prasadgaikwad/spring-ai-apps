@@ -3,15 +3,15 @@ services:
     image: pgvector/pgvector:pg16
     container_name: spring-ai-pgvector
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: spring_ai_pgvector
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:?Set SPRING_DATASOURCE_PASSWORD in .env before starting Compose}
+      POSTGRES_DB: ${SPRING_DATASOURCE_DB:-spring_ai_pgvector}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgvector-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-postgres} -d ${SPRING_DATASOURCE_DB:-spring_ai_pgvector}"]
       interval: 5s
       timeout: 5s
       retries: 5
