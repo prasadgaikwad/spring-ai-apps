@@ -1,6 +1,6 @@
 # Spring Boot 4.2 and Spring AI 2.1 upgrade
 
-**Status:** GA upgrade implemented. The parent now pins Boot `4.2.0` and Spring AI `2.1.0`; the earlier RC spike is retained below as the planning record.
+**Status:** GA upgrade implemented in PR [#67](https://github.com/prasadgaikwad/spring-ai-apps/pull/67). The parent now pins Boot `4.2.0` and Spring AI `2.1.0`; the earlier RC spike is retained below as the planning record.
 
 Tracking issue: [#36](https://github.com/prasadgaikwad/spring-ai-apps/issues/36).
 
@@ -70,7 +70,7 @@ springdoc-openapi           3.2.0 (unchanged)
 | `McpClientProtocolIntegrationTests` and `AgentStreamingIntegrationTests` | Passed on the GA pair; the SSE handshake and streaming `.content()` path are unchanged |
 | `GET /v3/api-docs` and `/swagger-ui/index.html` | Added to the existing app-context tests for all seven modules; all passed |
 | #33 observability tests | Passed in the full reactor run; no automatic trace bridge was introduced |
-| PGVector/Testcontainers tests | Excluded locally because Docker is unavailable; validated separately by the CI `docker-integration` job |
+| PGVector/Testcontainers tests | Excluded locally because Docker is unavailable; CI `docker-integration` passed in run `44836550600` (1m6s) |
 | Live OpenAI/Anthropic/Ollama providers, MCP peer stack, and Jev endpoint | Not exercised; no live-vendor dependency was added |
 
 The resolved dependency tree confirms `spring-ai-systemone` and `spring-ai-autoconfigure-model-chat-memory` on the six chat demos, MCP SDK `2.2.0`, and Anthropic SDK `3.8.0`. `ai-decision` still loads no `ChatModel` beans. The `getDefaultOptions()` stubs touched by this upgrade now use `getOptions()`.
@@ -147,7 +147,7 @@ Completed for the GA pair:
 - [x] Update `spring-boot-starter-parent` and `spring-ai.version` together.
 - [x] Reconcile `springdoc.version`; no override was needed for the Spring AI-managed MCP/Anthropic versions.
 - [x] Run `./mvnw -U -B -DskipTests compile`, including Enforcer dependency convergence.
-- [ ] Run the Docker-tagged RAG PGVector tests in CI; local Docker is unavailable.
+- [x] Run the Docker-tagged RAG PGVector tests in CI (`docker-integration`, run `44836550600`); local Docker is unavailable.
 - [x] Run the full no-Docker reactor test command, including `ai-rag` and `ai-agents`.
 - [x] Re-run `McpClientProtocolIntegrationTests` and `AgentStreamingIntegrationTests`; streaming `token`/`done`/`error` events are unchanged.
 - [x] Verify `GET /v3/api-docs` and `/swagger-ui/index.html` for all seven applications.
@@ -156,7 +156,9 @@ Completed for the GA pair:
 - [x] Confirm no Anthropic `temperature`/`topP`/`topK` properties or code remain.
 - [x] Inspect the dependency tree for `spring-ai-systemone`, `spring-ai-autoconfigure-model-chat-memory`, MCP `2.2.x`, and Anthropic `3.x`.
 - [x] Update `README.md`, module guides, [architecture](../architecture.md), ADR-0002, and the documentation audit with the new pins.
-- [ ] Keep issue #36 open until the implementation PR is merged with green CI; then close it with the PR reference.
+- [x] Confirm both CI jobs are green before merge: `build` (2m21s) and `docker-integration` (1m6s) in run `44836550600`.
+
+Issue #36 stays open until this PR is merged with green CI; the `Closes #36` line then closes it with the PR reference.
 
 ## Hold/rollback criteria
 
