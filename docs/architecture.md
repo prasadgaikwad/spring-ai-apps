@@ -75,6 +75,8 @@ flowchart LR
 
 Only the branch for the active chat profile is primary. Other starters can still construct unused beans; placeholders avoid startup key validation but cannot authorize real requests. Use one chat profile at a time. Media resolution is by interface bean availability rather than chat-profile dispatch. Embedding compatibility is a persisted-data constraint, including model and vector dimensions; Anthropic has no shared primary embedding alias. The decision `provider` string is not a dispatch mechanism. See [ADR-0001](adr/0001-provider-portability-profiles-ollama-default.md).
 
+A separate opt-in `security` profile in `ai-common` registers a servlet filter requiring API key or Basic auth for `POST /api/**`, denies cross-origin requests unless allowlisted, and rate-limits those POSTs. The same profile disables springdoc and reduces actuator exposure. It is additive to a chat profile and is off by default; see the root [README](../README.md) for the local-only posture and configuration keys.
+
 ## 4. Implemented use cases
 
 | Module | Main entry / collaborators | Data and behavior | Detailed guide |

@@ -1,0 +1,23 @@
+# Opt-in local hardening profile. Not enabled by default; see root README.
+app:
+  security:
+    api-key: ${AI_SECURITY_API_KEY:local-demo-key}
+    username: ${AI_SECURITY_USERNAME:demo}
+    password: ${AI_SECURITY_PASSWORD:local-demo-password}
+    allowed-origins: ${AI_SECURITY_ALLOWED_ORIGINS:}
+    rate-limit-per-minute: ${AI_SECURITY_RATE_LIMIT:60}
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
