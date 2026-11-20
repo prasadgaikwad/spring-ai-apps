@@ -118,7 +118,7 @@ class RagQueryIntegrationTests extends AbstractRagIntegrationTest {
         List<Document> retrieved = hybridDocumentRetriever.retrieve(query);
         assertThat(retrieved).extracting(Document::getId).doesNotHaveDuplicates();
         assertThat(retrieved).allSatisfy(document ->
-                assertThat(document.getMetadata()).containsEntry("source", "inline-text"));
+                assertThat(document.getMetadata().get("source")).asString().contains("inline-text"));
 
         List<Document> reranked = lexicalReranker.process(query, retrieved);
         assertThat(reranked).isNotEmpty();
