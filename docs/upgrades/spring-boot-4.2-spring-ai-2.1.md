@@ -76,13 +76,13 @@ Do not merge a Boot-only or Spring AI-only bump. Spring AI 2.1 tracks Boot 4.2, 
 | Boot configuration changes | Redis master/replica database behavior, forward-header handling, Tomcat servlet property moves, Micrometer convention changes | None of those features/properties are configured here | Check startup logs and the configuration changelog during the bump |
 | `DecisionModel` API | New `org.springframework.ai.decision` API and OpenAI/Ollama/SystemOne implementations | `ai-decision` has its own `DecisionClient`/`JevDecisionClient` and `ai.decision.*` properties; no Java package collision | Keep the custom adapter for the version bump; evaluate standard `DecisionModel` separately (below) |
 | Ordered message parts | `AssistantMessage`/`UserMessage` now expose ordered `MessagePart`s; existing constructors/builders still work; `getMedia()`/`getToolCalls()` are unmodifiable and media participates in equality | `ai-multimodal` builds `UserMessage` with text + media; tests use `AssistantMessage(String)` | Re-run multimodal tests; keep reading media through `getMedia()`; no source change expected |
-| Streaming parts / tool-call deltas | Streamed chunks carry indexed partial parts; `.stream().content()` still returns text deltas | `ai-agents` SSE streaming (if #37 is merged) uses `.stream().content()` and does not stream tool calls | Rebase the SSE branch and re-run `AgentStreamingIntegrationTests` after the bump |
+| Streaming parts / tool-call deltas | Streamed chunks carry indexed partial parts; `.stream().content()` still returns text deltas | `ai-agents` SSE streaming uses `.stream().content()` and does not stream tool calls | Re-run `AgentStreamingIntegrationTests` after the bump |
 | Anthropic SDK 3.x | `anthropic-java` 3.4.0; API version `2026-10-21`; `temperature`, `topP`, `topK` are rejected; keys use `Authorization: Bearer` | No Anthropic sampling properties are configured; the SDK handles auth | Remove sampling properties if any are added later; smoke-test the `anthropic` profile when a key is available |
 | OpenAI message parts / connection details | `OpenAiChatModel` builds messages from parts; new `OpenAiConnectionDetails` keeps `spring.ai.openai.*` properties working | Existing `spring.ai.openai.api-key`, profile model, and multimodal/structured paths use the documented properties | Re-run OpenAI-profile tests; no custom connection-details bean is needed |
 | PgVector `distance` metadata | A stored `distance` metadata key is preserved; computed distance remains on `Document.getScore()` | `ai-rag` does not read or write a `distance` metadata field; `QueryResponse.Source` exposes only id/text | Run PGVector integration tests with Docker and confirm source ordering |
 | Chat memory / sessions | `ChatMemory` and `MessageChatMemoryAdvisor` are deprecated in favor of session memory | No direct `ChatMemory` or session API usage was found; starter auto-configuration may still include the deprecated module | Do not migrate as part of the version bump; track removal before Spring AI 3.0 |
 | MCP starters | Spring AI 2.1 adds MCP `2026-07-28` "modern" server support; current SDK is `2.2.0-M2`; existing STDIO/SSE/STREAMABLE/STATELESS modes remain | `ai-agents` keeps both starters disabled by default and tests an SSE client/server handshake | Re-run `McpClientProtocolIntegrationTests`; keep the configured protocol unchanged; evaluate `MODERN` separately |
-| springdoc | `3.2.0` is built against Boot 4.1.2; no Boot 4.2 release is available | All six REST demos expose `/v3/api-docs` and Swagger UI | Treat `/v3/api-docs` success for every module as a release gate; hold the upgrade if springdoc is incompatible |
+| springdoc | `3.2.0` is built against Boot 4.1.2; no Boot 4.2 release is available | All seven REST demos expose `/v3/api-docs` and Swagger UI | Treat `/v3/api-docs` success for every module as a release gate; hold the upgrade if springdoc is incompatible |
 | Observability | Boot 4.2 brings Micrometer 1.18; Spring AI 2.1 adds `decision` observations and usage metrics | `ai-observability` uses a local Micrometer `ObservationHandler` and DuckDB sink, not a Brave/OpenTelemetry bridge | Re-run the #33 correlation/timing/status tests; confirm no automatic bridge is introduced |
 
 ## `ai-decision` and the new `DecisionModel` API
@@ -127,8 +127,8 @@ Complete in order when GA artifacts are available:
 - [ ] Run `mvn -DskipTests compile`.
 - [ ] Run `mvn test` with Docker available, including the RAG PGVector tests.
 - [ ] Run `mvn -pl ai-rag -am test` and verify retrieval ordering/source content.
-- [ ] Run `mvn -pl ai-agents -am test`, including the MCP protocol test and, if merged, `AgentStreamingIntegrationTests`.
-- [ ] Verify `POST /api/agents/stream` still emits `token`/`done`/`error` events if #37 is merged.
+- [ ] Run `mvn -pl ai-agents -am test`, including the MCP protocol test and `AgentStreamingIntegrationTests`.
+- [ ] Verify `POST /api/agents/stream` still emits `token`/`done`/`error` events.
 - [ ] Verify `GET /v3/api-docs` (and Swagger UI) for all seven applications.
 - [ ] Re-run the #33 observability tests for parent links, timing, and error status.
 - [ ] Replace remaining `getDefaultOptions()` test stubs with `getOptions()` where the test is touched.

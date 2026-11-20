@@ -1,4 +1,6 @@
-# Documentation audit for issue #28
+# Documentation audit for issue #28 (frozen snapshot)
+
+> This is a point-in-time record of the issue-#28 documentation pass, not a live verification contract. Claims superseded after #28 are listed in [Post-#28 status (issue #55)](#post-28-status-issue-55); the original audit content and its historical validation figures are retained for provenance.
 
 ## Scope and evidence
 
@@ -38,7 +40,7 @@ This review covers all tracked Markdown documents, the eight Maven modules, main
 
 ## Gaps recorded rather than silently promoted to guarantees
 
-Anthropic RAG embedding selection, schema/dimension migrations, obsolete-chunk cleanup, MCP client integration (no client starter/connection supplied), real tool execution, durable/concurrent Eval history, multimodal option wiring, accurate automatic span timing/correlation, decision protocol/mapping tests, and live provider verification remain implementation gaps or operational qualifications. They are documented where they affect a caller. This ticket changes the documentation, not those feature contracts.
+Anthropic RAG embedding selection, schema/dimension migrations, obsolete-chunk cleanup, MCP peer connection (both client and server starters are present but disabled by default), real tool execution, durable Eval history, multimodal option wiring, accurate automatic span timing/correlation, and live provider verification remain implementation gaps or operational qualifications. Decision request/response mapping is covered by MockWebServer tests against an assumed Jev contract; live vendor semantics and probability calibration remain unverified. They are documented where they affect a caller. This ticket changes the documentation, not those feature contracts.
 
 ## Validation approach
 
@@ -53,3 +55,14 @@ Check local Markdown links and balanced fenced blocks, compare endpoint/DTO/prop
 - Two independent review passes checked documented standards/source accuracy and issue acceptance coverage. Corrected regex case-sensitivity wording, RAG test-double scope, the root calibration claim, the hybrid-search representation claim, and the root context diagram. A final POM cross-check corrected the agents MCP client-starter claim and clarified Actuator versus explicit trace-query routes.
 
 No live AI-provider calls were made. The tests establish the existing application baseline and the documented testing seams, not upstream interoperability.
+
+## Post-#28 status (issue #55)
+
+This section supersedes claims in the frozen snapshot above; the original text and validation figures are not rewritten.
+
+- **Decision adapter verification**: `ai-decision/src/test/java/dev/prasadgaikwad/springaiapps/decision/JevDecisionClientContractTests.java` uses MockWebServer to verify request mapping, response aliases/fallbacks, blank/missing payloads, non-2xx, invalid JSON, and timeout against an **assumed** Jev contract. Live vendor semantics and probability calibration remain unverified. Adapter HTTP/mapping tests are not absent; a REST success/failure seam with a stubbed `DecisionClient` is still missing.
+- **Eval history**: bounded by `ai.eval.max-runs` (environment override `AI_EVAL_MAX_RUNS`), synchronized, and process-local, with default `100` in both source and YAML. It evicts oldest runs and is not durable.
+- **MCP client starter**: present in `ai-agents/pom.xml`; server and client are disabled by default in `application.yml`, and no peer connection is configured.
+- **Version pins**: root `pom.xml` pins Boot `4.1.2` / Spring AI `2.0.2`; ADR-0002 records Boot `4.1.1` / Spring AI `2.0.1` as the original baseline.
+- **Upgrade planning**: the [upgrade plan](upgrades/spring-boot-4.2-spring-ai-2.1.md) no longer conditions streaming tests on an unmerged branch and treats all seven REST demos as the springdoc gate.
+- **API and navigation**: [architecture](architecture.md) lists `DELETE /api/eval/runs`; the root [README](../README.md) links the upgrade plan, spikes #45/#46, plan #47, and the [2026-11-17 application review](application-review-2026-11-17.md) with status labels.

@@ -6,7 +6,7 @@ Accepted. Originally six demos; `ai-decision` subsequently added as the seventh.
 
 ## Context and decision
 
-Use one parent Maven reactor to pin Boot 4.1.1, Spring AI 2.0.1, and Java 25 for `ai-common` and the seven independent Demo applications. Shared configuration, error contracts, and the deterministic Eval harness live in `ai-common`. This is preferred to standalone repositories or repeated plumbing in each demo: the reference collection benefits from consistent contracts, at the cost of requiring readers and builds to navigate the shared dependency.
+Use one parent Maven reactor for `ai-common` and the seven independent Demo applications. The original baseline pinned Boot 4.1.1, Spring AI 2.0.1, and Java 25; the root `pom.xml` now pins Boot 4.1.2, Spring AI 2.0.2, and Java 25. Shared configuration, error contracts, and the deterministic Eval harness live in `ai-common`. This is preferred to standalone repositories or repeated plumbing in each demo: the reference collection benefits from consistent contracts, at the cost of requiring readers and builds to navigate the shared dependency.
 
 Each demo declares its use-case dependencies. `ai-common` currently includes web infrastructure and the Ollama starter; it does not contain every provider starter. Shared prompt templates remain an original scope item rather than a delivered library. The Java namespace is `dev.prasadgaikwad.springaiapps.*`, while Maven coordinates retain `spring-ai-apps`.
 

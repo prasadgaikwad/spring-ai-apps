@@ -96,7 +96,7 @@ All seven demos have `GET /api/<name>/ping`, `/v3/api-docs`, and Swagger UI (`/s
 | --- | --- |
 | `/api/rag` | `POST /ingest`, `POST /query` |
 | `/api/agents` | `POST /ask`, `POST /mcp/ask`, `POST /stream` (SSE), `GET /tools`, `GET /mcp/tools` |
-| `/api/eval` | `POST /run`, `GET /runs`, `GET /runs/{runId}` |
+| `/api/eval` | `POST /run`, `GET /runs`, `GET /runs/{runId}`, `DELETE /runs` |
 | `/api/observability` | `POST /spans`, `GET /spans`, `GET /traces` |
 | `/api/multimodal` | `POST /image`, `POST /vision`, `POST /speech`, `POST /transcribe` |
 | `/api/structured` | `POST /extract` |
