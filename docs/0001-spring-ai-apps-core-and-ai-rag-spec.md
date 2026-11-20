@@ -23,7 +23,7 @@ As an AI engineering team, we want a set of production-grade reference applicati
 
 ## Solution
 
-A multi-module Maven monorepo (`spring-ai-apps`) originally pinned Spring Boot 4.1 + Spring AI 2.0 (now 4.1.2 / 2.0.2 on main), targeting Java 25, with one shared `ai-common` module and implemented Demo modules. Demos are provider-agnostic via `spring.profiles.active`, defaulting to local Ollama (zero-key). We build the foundation plus the first, flagship demo — `ai-rag` — end-to-end, proving the shared plumbing before the other demos follow.
+A multi-module Maven monorepo (`spring-ai-apps`) originally pinned Spring Boot 4.1 + Spring AI 2.0 (now 4.2.0 / 2.1.0 on main), targeting Java 25, with one shared `ai-common` module and implemented Demo modules. Demos are provider-agnostic via `spring.profiles.active`, defaulting to local Ollama (zero-key). We build the foundation plus the first, flagship demo — `ai-rag` — end-to-end, proving the shared plumbing before the other demos follow.
 
 ## User Stories
 
@@ -71,7 +71,7 @@ A multi-module Maven monorepo (`spring-ai-apps`) originally pinned Spring Boot 4
 
 ## Implementation Decisions
 
-- **Build**: Maven monorepo; parent POM uses `spring-boot-starter-parent` 4.1.2 and imports `spring-ai-bom` 2.0.2. Spring AI 2.0.x is compatible with Spring Boot 4.0.x/4.1.x; 4.1.2 is the current stable `4.1.x` baseline and the Spring AI 2.0.2 artifacts remain on the Boot 4.1-aligned line.
+- **Build**: Maven monorepo; parent POM uses `spring-boot-starter-parent` 4.2.0 and imports `spring-ai-bom` 2.1.0. Spring AI 2.1.x is built on Spring Boot 4.2.x; the GA pair replaced the original Spring AI 2.0.x / Boot 4.1.x baseline.
 - **Language/runtime**: Java 25 toolchain; root package `dev.prasadgaikwad.springaiapps.*` (Java forbids hyphens, so the package differs from the Maven `spring-ai-apps` artifactId/groupId).
 - **Modules**: `ai-common` (shared) + `ai-rag`, `ai-agents`, `ai-eval`, `ai-observability`, `ai-multimodal`, `ai-structured` (demos). `ai-rag` is the sole demo built end-to-end now; the other five are scaffolded to green and deepened later.
 - **`ai-common` responsibilities**: Vector store config, Eval harness, prompt templates, common REST/error handling. Observability config is deliberately NOT here — it stays isolated in `ai-observability`.

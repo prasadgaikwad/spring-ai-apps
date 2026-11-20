@@ -70,9 +70,9 @@ class McpClientProtocolIntegrationTests {
 
     @Test
     void discoversAndCallsPublishedMcpToolsOverProtocol() throws Exception {
-        when(ollamaChatModel.getDefaultOptions()).thenReturn(ChatOptions.builder().build());
-        when(openAiChatModel.getDefaultOptions()).thenReturn(ChatOptions.builder().build());
-        when(anthropicChatModel.getDefaultOptions()).thenReturn(ChatOptions.builder().build());
+        when(ollamaChatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        when(openAiChatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        when(anthropicChatModel.getOptions()).thenReturn(ChatOptions.builder().build());
 
         client = connectWithRetry("http://localhost:" + port + "/sse");
 
@@ -91,9 +91,9 @@ class McpClientProtocolIntegrationTests {
 
     @Test
     void springAiToolCallbackProviderExposesDiscoveredMcpTools() throws Exception {
-        when(ollamaChatModel.getDefaultOptions()).thenReturn(ChatOptions.builder().build());
-        when(openAiChatModel.getDefaultOptions()).thenReturn(ChatOptions.builder().build());
-        when(anthropicChatModel.getDefaultOptions()).thenReturn(ChatOptions.builder().build());
+        when(ollamaChatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        when(openAiChatModel.getOptions()).thenReturn(ChatOptions.builder().build());
+        when(anthropicChatModel.getOptions()).thenReturn(ChatOptions.builder().build());
 
         client = connectWithRetry("http://localhost:" + port + "/sse");
 

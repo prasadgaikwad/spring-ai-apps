@@ -58,6 +58,15 @@ class AiRagApplicationTests {
     }
 
     @Test
+    void apiDocsResponds() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists());
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void ingestRejectsBothTextAndSource() throws Exception {
         mockMvc.perform(post("/api/rag/ingest")
                         .contentType(MediaType.APPLICATION_JSON)
