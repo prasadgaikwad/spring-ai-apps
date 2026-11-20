@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for the module/client boundary. Spring AI 2.1's `DecisionModel` was evaluated in issue #46 and is not adopted; see the [evaluation](../spikes/46-decision-model-evaluation.md). Vendor protocol assumptions remain unverified by upstream tests.
+Accepted for the module/client boundary. Spring AI 2.1's `DecisionModel` was evaluated in issue #46 and is not adopted; see the [evaluation](../spikes/46-decision-model-evaluation.md). Mock-HTTP tests pin the adapter's assumed contract; live Jev semantics and probability calibration remain unverified.
 
 ## Context and decision
 
@@ -13,9 +13,9 @@ Use `DecisionProperties` and WebClient for base URL, key, model, and timeout. Th
 ## Implementation qualifications
 
 - Only one client component exists. `ai.decision.provider` does not select beans; adding providers requires explicit bean-selection wiring.
-- `/v1/systemone`, default endpoint/model, and answer-field aliases are current adapter assumptions. Neither successful upstream HTTP mapping nor probability calibration is established by the existing tests.
+- `/v1/systemone`, default endpoint/model, and answer-field aliases are current adapter assumptions. The MockWebServer tests in `ai-decision/src/test/java/dev/prasadgaikwad/springaiapps/decision/JevDecisionClientContractTests.java` verify request/response mapping against those assumed aliases; they are local mock-HTTP checks, not live vendor verification or calibration evidence.
 - Local Noul means a null/none answer with reason/probability. Its external-provider semantics require confirmation.
-- Default tests cover startup, ping, empty questions, and DTO construction. Earlier descriptions of mocked HTTP/mapping tests overstated coverage.
+- Default tests cover context/startup, ping, empty questions, and DTO fields/state copy. The MockWebServer contract tests additionally cover request path/headers/body, Choice/Score/Noul parsing and fallbacks, blank/missing payloads, non-2xx, invalid JSON, and timeout. They verify the adapter's assumed contract only; live Jev endpoint semantics, response formats, and calibration remain unverified. A REST-level success/failure seam with a stubbed `DecisionClient` is still absent.
 - Answer parsing is permissive (including probability default 1.0); validation, retries, and provider-specific error mapping remain gaps, not accepted guarantees.
 
 ## Spring AI 2.1 `DecisionModel` evaluation (issue #46)

@@ -85,7 +85,17 @@ The full test suite requires Docker for RAG's PGVector Testcontainers tests. It 
 - [docs/adr/](docs/adr/) — Architecture Decision Records
 - [Architecture and implementation map](docs/architecture.md) — System context, dependency boundaries, APIs, persistence, and testing coverage
 - [Implementation learnings](docs/learnings/implementation-learnings.md) — Findings across every implemented use case
-- [Documentation audit](docs/documentation-audit.md) — Sources reviewed and corrections for issue #28
+- [Documentation audit](docs/documentation-audit.md) — Frozen issue-#28 snapshot, with post-#28 status notes
+
+## Spikes, upgrades, and plans
+
+These are time-bound notes, not current API contracts or shipped changes:
+
+- [Spring Boot 4.2 / Spring AI 2.1 upgrade plan](docs/upgrades/spring-boot-4.2-spring-ai-2.1.md) — planning/spike only; `main` keeps Boot 4.1.2 / Spring AI 2.0.2
+- [MCP `MODERN` protocol spike (#45)](docs/spikes/45-mcp-modern-protocol.md) — spike complete; recommendation is to defer adoption
+- [Spring AI `DecisionModel` evaluation (#46)](docs/spikes/46-decision-model-evaluation.md) — evaluation complete; keep the custom Jev adapter
+- [Session-memory migration plan (#47)](docs/plans/47-session-memory-migration.md) — conditional and not applicable today; no migration implemented
+- [Application review (2026-11-17)](docs/application-review-2026-11-17.md) — point-in-time review backlog, not a live contract
 
 ```mermaid
 flowchart TB

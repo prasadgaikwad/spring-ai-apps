@@ -22,7 +22,7 @@ The shared harness is pure logic with Spring `Assert` validation and no model I/
 
 `CaseReport.passed` is derived even if supplied as a constructor parameter. `Summary` checks counts and bounds; a manually constructed `EvalReport` does not reconcile its summary with its case list. The harness rejects duplicate case IDs, while baseline comparison of manually created duplicates keeps the first baseline occurrence.
 
-The REST layer differs from the shared core: blank answers trigger generation, IDs are assigned by position, and comparison uses only the preceding report. Reorder inputs and the regression identity changes meaning. History is unbounded, unsynchronized process memory; GET returns no stored regression diff. Keep a stable pair order and treat this as a reference flow rather than a durable evaluation service.
+The REST layer differs from the shared core: blank answers trigger generation, IDs are assigned by position, and comparison uses only the preceding report. Reorder inputs and the regression identity changes meaning. History is bounded, synchronized, and process-local: `ai.eval.max-runs` (environment override `AI_EVAL_MAX_RUNS`) defaults to `100` in source and YAML, evicts the oldest retained runs, and is not durable across restarts. GET returns no stored regression diff. Keep a stable pair order and treat this as a reference flow rather than a durable evaluation service.
 
 ## RAG ingestion, storage, and retrieval
 
@@ -59,11 +59,11 @@ Manual REST insertion can carry proper timestamps and chosen trace IDs and is st
 
 ## Decisions and the Jev adapter
 
-Separate a local typed abstraction from a verified provider contract. `DecisionClient` is an extension point, but only one implementation exists and `provider` is not a bean selector. The `/v1/systemone` path and parser aliases are assumptions in this code, not facts established by the current tests.
+Separate a local typed abstraction from a verified provider contract. `DecisionClient` is an extension point, but only one implementation exists and `provider` is not a bean selector. The `/v1/systemone` path and parser aliases are assumptions pinned by local MockWebServer tests, not facts established about the live vendor.
 
 The parser defaults probability to 1.0, score to zero, and unknown types to Choice. Blank/unrecognized answer containers can become empty success responses. These permissive mappings can hide upstream mismatch; they do not calibrate probabilities. Noul is currently a local none/null concept whose vendor meaning needs confirmation. State/list copies are shallow, and per-question validation is minimal.
 
-Tests cover context/ping/empty questions and DTO fields/state copy. There is no adapter HTTP success/failure/timeout test. Document that gap directly rather than describing “mocked HTTP” coverage. Adding a second provider would need explicit selection and independent protocol verification.
+Tests cover context/ping/empty questions and DTO fields/state copy, plus `JevDecisionClientContractTests` MockWebServer cases for request mapping, Choice/Score/Noul aliases and fallbacks, blank/missing payloads, non-2xx, invalid JSON, and timeout. These verify an assumed Jev contract with a local server; live vendor semantics, response formats, and probability calibration remain unverified. A REST-level success/failure seam with a stubbed `DecisionClient` is still absent. Adding a second provider would need explicit selection and independent protocol verification.
 
 ## Maintenance checklist for future feature work
 

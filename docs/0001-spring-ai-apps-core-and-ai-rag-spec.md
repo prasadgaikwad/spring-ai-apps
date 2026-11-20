@@ -8,12 +8,12 @@ This is the **original foundation specification**, retained to preserve its user
 | --- | --- | --- |
 | Shared foundation and Eval harness | Profile aliases, common errors, deterministic criteria/reports/regressions; no shared prompt-template library yet | [ai-common](../ai-common/README.md) |
 | RAG ETL/query | Text ingestion, deterministic chunk IDs, hybrid RRF retrieval, lexical rerank, advisor grounding, source responses, `/chat` | [ai-rag](../ai-rag/README.md) |
-| Agents | Local calculator tools, MCP server definitions and optional callback seam, `/chat`; server disabled and no client starter/connection supplied by default | [ai-agents](../ai-agents/README.md) |
+| Agents | Local calculator tools, MCP server definitions and optional callback seam, `/chat`; both MCP starters are present in `ai-agents/pom.xml` but server and client are disabled by default with no peer connection configured | [ai-agents](../ai-agents/README.md) |
 | Evaluation | Optional answer generation, deterministic grading, positional case IDs, process-local history | [ai-eval](../ai-eval/README.md) |
 | Observability | Module-local DuckDB capture and REST queries; automatic correlation and timing are simplified | [ai-observability](../ai-observability/README.md) |
 | Multimodal | Four REST flows; model capabilities/credentials vary independently of chat profile | [ai-multimodal](../ai-multimodal/README.md) |
 | Structured output | Candidate/order extraction, Jakarta validation, invalid structured values returned with violations | [ai-structured](../ai-structured/README.md) |
-| Later addition: decisions (#13) | Typed DTOs, DecisionClient and Jev HTTP adapter; upstream contract/mapping not tested | [ai-decision](../ai-decision/README.md) |
+| Later addition: decisions (#13) | Typed DTOs, DecisionClient and Jev HTTP adapter; MockWebServer tests verify request/response mapping against an assumed Jev contract, while live vendor semantics and calibration remain unverified | [ai-decision](../ai-decision/README.md) |
 
 The original provider-portability goal has capability-specific qualifications: Anthropic has no shared primary embedding alias, OpenAI embeddings need compatible vector dimensions, and media beans do not switch solely through ChatModel aliases. `ai-decision` is configured independently. The observation sink is an in-process observation handler, not a cross-demo tracing collector. Default test coverage includes more than skeleton smoke tests, but does not establish live-provider interoperability. See the [current architecture and coverage map](architecture.md), [ADR index](adr/README.md), and [implementation learnings](learnings/implementation-learnings.md) for delivered behavior and limitations. Later issues extend the original out-of-scope list below; they do not retroactively change the initial milestone.
 
