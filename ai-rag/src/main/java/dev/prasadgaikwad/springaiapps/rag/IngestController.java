@@ -34,7 +34,12 @@ public class IngestController {
     @PostMapping("/ingest")
     @ResponseStatus(HttpStatus.OK)
     public IngestResponse ingest(@RequestBody IngestRequest request) {
-        if (StringUtils.hasText(request.text())) {
+        boolean hasText = request != null && StringUtils.hasText(request.text());
+        boolean hasSource = request != null && StringUtils.hasText(request.source());
+        if (hasText == hasSource) {
+            throw new BadRequestException("Provide exactly one of 'text' or 'source'");
+        }
+        if (hasText) {
             return ingestionService.ingestText(request.text());
         }
         Resource resource = resourceLoader.getResource(request.source());

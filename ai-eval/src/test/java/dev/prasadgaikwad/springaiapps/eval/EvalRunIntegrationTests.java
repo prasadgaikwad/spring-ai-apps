@@ -167,6 +167,26 @@ class EvalRunIntegrationTests {
     }
 
     @Test
+    void nullPairElementReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/eval/run")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"pairs\":[null],\"criteria\":[{\"type\":\"contains\",\"value\":\"Spring\"}]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Pair 0 must not be null"));
+    }
+
+    @Test
+    void nullCriterionElementReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/eval/run")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"pairs\":[{\"question\":\"Q?\",\"answer\":\"A Spring answer\"}],\"criteria\":[null]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Criteria 0 must not be null"));
+    }
+
+    @Test
     void upstreamModelFailureReturnsBadGatewayWithSafeMessage() throws Exception {
         when(chatModel.getOptions()).thenReturn(ChatOptions.builder().build());
         when(chatModel.call(any(Prompt.class)))

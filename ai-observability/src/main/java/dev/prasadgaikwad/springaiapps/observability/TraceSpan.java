@@ -1,8 +1,11 @@
 package dev.prasadgaikwad.springaiapps.observability;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,13 +27,10 @@ public record TraceSpan(
         String status,
         Map<String, String> tags) {
 
+    private static final Logger log = LoggerFactory.getLogger(TraceSpan.class);
+
     public TraceSpan {
-        if (tags == null) {
-            tags = Map.of();
-        }
-        else {
-            tags = Map.copyOf(tags);
-        }
+        tags = sanitize(tags);
     }
 
     public static TraceSpan from(String id, String traceId, String parentSpanId, String name, String kind,
@@ -43,6 +43,7 @@ public record TraceSpan(
                 });
             }
             catch (JsonProcessingException ex) {
+                log.warn("Malformed tags JSON for trace {}; using empty tags", traceId, ex);
                 tags = Map.of();
             }
         }
@@ -58,7 +59,17 @@ public record TraceSpan(
             return mapper.writeValueAsString(tags);
         }
         catch (JsonProcessingException ex) {
+            log.warn("Could not serialize span tags; using empty JSON object", ex);
             return "{}";
         }
+    }
+
+    private static Map<String, String> sanitize(Map<String, String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return Map.of();
+        }
+        return tags.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

@@ -93,4 +93,23 @@ class TraceSinkIntegrationTests {
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("Malformed request body"));
     }
+
+    @Test
+    void nullTagValueReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/observability/spans")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"traceId\":\"t1\",\"name\":\"span\",\"tags\":{\"model\":null}}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("'tags' must not contain null keys or values"));
+    }
+
+    @Test
+    void malformedTagsObjectReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/observability/spans")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"traceId\":\"t1\",\"name\":\"span\",\"tags\":\"not-a-map\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+    }
 }
