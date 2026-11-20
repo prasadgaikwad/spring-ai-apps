@@ -40,6 +40,9 @@ public class ObservabilityController {
             throw new BadRequestException("'traceId' must not be blank");
         }
         Map<String, String> tags = request.tags() == null ? Map.of() : request.tags();
+        if (tags.containsKey(null) || tags.containsValue(null)) {
+            throw new BadRequestException("'tags' must not contain null keys or values");
+        }
         return repository.save(request.traceId(), request.parentSpanId(), request.name(), request.kind(),
                 request.startTime() == null ? java.time.Instant.now() : request.startTime(),
                 request.endTime(), tags);

@@ -5,6 +5,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -12,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -53,6 +55,35 @@ class AiRagApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.module").value("ai-rag"))
                 .andExpect(jsonPath("$.status").value("ok"));
+    }
+
+    @Test
+    void ingestRejectsBothTextAndSource() throws Exception {
+        mockMvc.perform(post("/api/rag/ingest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"inline\",\"source\":\"classpath:docs/context.md\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Provide exactly one of 'text' or 'source'"));
+    }
+
+    @Test
+    void ingestRejectsNeitherTextNorSource() throws Exception {
+        mockMvc.perform(post("/api/rag/ingest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Provide exactly one of 'text' or 'source'"));
+    }
+
+    @Test
+    void ingestRejectsBlankText() throws Exception {
+        mockMvc.perform(post("/api/rag/ingest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
 
     @Test

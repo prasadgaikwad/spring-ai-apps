@@ -1,6 +1,7 @@
 package dev.prasadgaikwad.springaiapps.observability;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -31,5 +32,25 @@ class TraceSpanTest {
         assertThat(json).contains("model");
         TraceSpan restored = TraceSpan.from("1", "t", null, "x", "SPAN", Instant.now(), Instant.now(), 5L, "s", "OK", json, mapper);
         assertThat(restored.tags().get("model")).isEqualTo("gpt-4o");
+    }
+
+    @Test
+    void nullTagEntriesAreDropped() {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("model", "llama3.2");
+        tags.put(null, "bad-key");
+        tags.put("bad-value", null);
+
+        TraceSpan span = new TraceSpan("1", "t", null, "x", "SPAN", Instant.now(), null, 10L, "s", "OK", tags);
+
+        assertThat(span.tags()).containsOnlyKeys("model");
+    }
+
+    @Test
+    void malformedPersistedTagsJsonFallsBackToEmptyTags() {
+        TraceSpan restored = TraceSpan.from("1", "t", null, "x", "SPAN", Instant.now(), Instant.now(), 5L,
+                "s", "OK", "{not-json", mapper);
+
+        assertThat(restored.tags()).isEmpty();
     }
 }

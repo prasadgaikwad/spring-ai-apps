@@ -43,4 +43,50 @@ class DecisionControllerTests {
                         .content("{\"state\":{},\"questions\":[]}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void decideRejectsNullStateValues() throws Exception {
+        mockMvc.perform(post("/api/decision/decide")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"state\":{\"accountId\":null},\"questions\":[{\"id\":\"q1\",\"type\":\"SCORE\",\"prompt\":\"Score it\"}]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("'state' must not contain null values"));
+    }
+
+    @Test
+    void decideRejectsNullQuestionElement() throws Exception {
+        mockMvc.perform(post("/api/decision/decide")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"state\":{},\"questions\":[null]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Question 0 must not be null"));
+    }
+
+    @Test
+    void decideRejectsBlankQuestionIdAndPrompt() throws Exception {
+        mockMvc.perform(post("/api/decision/decide")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"state\":{},\"questions\":[{\"id\":\"  \",\"type\":\"SCORE\",\"prompt\":\"  \"}]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Question 0 requires a non-blank 'id'"));
+    }
+
+    @Test
+    void decideRejectsMissingQuestionType() throws Exception {
+        mockMvc.perform(post("/api/decision/decide")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"state\":{},\"questions\":[{\"id\":\"q1\",\"prompt\":\"Score it\"}]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Question 0 requires a 'type'"));
+    }
+
+    @Test
+    void decideRejectsChoiceQuestionWithoutChoices() throws Exception {
+        mockMvc.perform(post("/api/decision/decide")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"state\":{},\"questions\":[{\"id\":\"q1\",\"type\":\"CHOICE\",\"prompt\":\"Pick one\",\"choices\":[]}]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Question 0 of type CHOICE requires non-empty 'choices'"));
+    }
 }

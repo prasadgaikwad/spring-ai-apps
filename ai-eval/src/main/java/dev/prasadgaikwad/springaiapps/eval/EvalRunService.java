@@ -60,13 +60,20 @@ public class EvalRunService {
         }
 
         List<Criterion> criteria = new ArrayList<>();
-        for (CriterionSpec spec : request.criteria()) {
+        for (int i = 0; i < request.criteria().size(); i++) {
+            CriterionSpec spec = request.criteria().get(i);
+            if (spec == null) {
+                throw new BadRequestException("Criteria " + i + " must not be null");
+            }
             criteria.add(spec.toCriterion());
         }
 
         List<EvalCase> cases = new ArrayList<>(request.pairs().size());
         for (int i = 0; i < request.pairs().size(); i++) {
             EvalRunRequest.QAPair pair = request.pairs().get(i);
+            if (pair == null) {
+                throw new BadRequestException("Pair " + i + " must not be null");
+            }
             String question = pair.question();
             if (!StringUtils.hasText(question)) {
                 throw new BadRequestException("Pair " + i + " requires a non-blank 'question'");
