@@ -4,7 +4,7 @@ A typed-decision REST adapter with a `DecisionClient` seam and `JevDecisionClien
 
 ## Implementation status
 
-The code implements local Choice/Score/Noul DTOs and an HTTP request/response mapping. `JevDecisionClientContractTests` verifies the adapter's HTTP contract against a deterministic `MockWebServer` (request path/body/authorization mapping, response parsing including documented fallbacks, blank/missing payload handling, invalid JSON, non-2xx propagation, and timeout failure). **The live vendor API contract, endpoint semantics, model names, and probability/Noul calibration remain unverified assumptions.** Validate them against the vendor before relying on live interoperability. The application does not calibrate or validate probabilities.
+The code implements local Choice/Score/Noul DTOs and an HTTP request/response mapping. `JevDecisionClientContractTests` verifies the adapter against a deterministic `MockWebServer`: request path/body/authorization mapping (including base-URL path preservation), documented field aliases, strict answer-identity/range checks, provider-error mapping for malformed payloads, invalid JSON, non-2xx responses, and timeouts. `DecisionControllerTests` covers REST success plus 502/504 upstream mapping with a stubbed `DecisionClient`. **The live vendor API contract, endpoint semantics, model names, and probability/Noul calibration remain unverified assumptions.** Validate them against the vendor before relying on live interoperability. Probability fields are raw provider values; the application does not calibrate them.
 
 ## Run and configuration
 
@@ -23,13 +23,13 @@ Unlike the other six demos, there is no default `ollama` profile or cloud-profil
 
 | Property | Environment / default | Actual behavior |
 | --- | --- | --- |
-| `provider` | `jev` | Metadata only; does not select an implementation |
-| `base-url` | `JEV_BASE_URL`, `https://api.typesafe.ai` | WebClient base URL |
-| `api-key` | `JEV_API_KEY`, then `TYPESAFE_API_KEY`, then `SYSTEMONE_API_KEY` | Bearer token when non-blank |
+| `provider` | `jev` | Validated at startup; `jev` is the only supported value and does not select a bean |
+| `base-url` | `JEV_BASE_URL`, `https://api.typesafe.ai` | Base URL; any path is preserved and `/v1/systemone` is appended |
+| `api-key` | `JEV_API_KEY`, then `TYPESAFE_API_KEY`, then `SYSTEMONE_API_KEY` | Bearer token when non-blank; blank sends no `Authorization` header |
 | `model` | `JEV_MODEL`, `jev-latest` | Sent in request body |
-| `timeout` | `10s` | Timeout on blocking for the reactive response |
+| `timeout` | `10s` | Positive value required; applied to HTTP connect, response, and reactive call |
 
-Environment fallback uses Spring placeholders: an explicitly empty first variable does not fall through to the next alias. Leave unused aliases unset. There is no configured retry policy, request-size limit, or validated positive timeout. The timeout is not a separately configured HTTP connect/read timeout. See [root setup](../README.md) for exporting environment values.
+Environment fallback uses Spring placeholders: an explicitly empty first variable does not fall through to the next alias. Leave unused aliases unset. There is no configured retry policy or request-size limit. See [root setup](../README.md) for exporting environment values.
 
 ## REST request and response
 
@@ -47,9 +47,9 @@ Environment fallback uses Spring placeholders: an explicitly empty first variabl
 }
 ```
 
-Send that JSON as the body of a decision POST. This makes an **external request**, unlike ping and invalid-input tests. Question types are enum values `CHOICE`, `SCORE`, `NOUL`; choices default to an empty immutable list. Question IDs, prompts, per-type choice constraints, and probability ranges are not deeply validated by the controller. State/list copies are shallow; nested arbitrary state values are not made immutable.
+Send that JSON as the body of a decision POST. This makes an **external request**, unlike ping and invalid-input tests. Question types are enum values `CHOICE`, `SCORE`, `NOUL`; choices default to an empty immutable list. The controller rejects null state values, blank question IDs/prompts, missing types, and `CHOICE` questions without choices. The adapter additionally rejects duplicate requested question IDs. State/list copies are shallow; nested arbitrary state values are not made immutable.
 
-The adapter posts `{model,state,questions}` to `/v1/systemone`. It reads `answers`, falling back to `data.answers` when absent/empty, then returns `{"answers":[...]}` containing concrete fields:
+The adapter posts `{model,state,questions}` to `<base-url>/v1/systemone`. It reads `answers`, falling back to `data.answers` when absent/not an array, then returns `{"answers":[...]}` containing concrete fields:
 
 | Local answer | Fields |
 | --- | --- |
@@ -57,7 +57,9 @@ The adapter posts `{model,state,questions}` to `/v1/systemone`. It reads `answer
 | `ScoreAnswer` | `questionId`, `score`, `probability` |
 | `NoulAnswer` | `questionId`, `reason`, `probability` |
 
-Parsing accepts `id` as a question-ID fallback, `choiceId` as a selected-choice fallback, `confidence` as a probability fallback, and `NONE`/`NULL` as Noul aliases. Unknown/missing types fall into Choice; missing probabilities default to **1.0**, and missing numeric scores default to zero. Empty/unrecognized answer containers return an empty list. There is no requirement that every input question has an answer, and output DTOs do not carry an explicit type discriminator. These permissive fallbacks are implementation behavior, not guarantees of valid or calibrated decisions. Upstream HTTP/timeout/parse errors reach generic error handling rather than a dedicated provider error contract.
+Parsing accepts `id` as a question-ID fallback (non-blank required), `choiceId` as a selected-choice fallback, `confidence` as a probability fallback, and `NONE`/`NULL` as Noul aliases. Unknown/missing types, non-numeric or out-of-range values, and blank/unknown/duplicate answer IDs are provider errors. Every requested question must have exactly one answer; a genuinely empty `answers` array is accepted only when no questions were requested. Missing probabilities still default to **1.0**, and missing numeric scores default to zero. Output DTOs do not carry an explicit type discriminator. Probability values are raw provider values; their presence does not establish calibration.
+
+Blank bodies, non-array or missing `data.answers`, invalid JSON, HTTP non-2xx responses, connect/read timeouts, and contract violations map to `UpstreamServiceException` (502) or `UpstreamTimeoutException` (504) through the shared error handler. Exception details and response bodies are not echoed to callers.
 
 ## Sequence and class relationships
 
@@ -70,7 +72,7 @@ sequenceDiagram
     U->>D: POST /api/decision/decide
     D->>D: require non-empty questions and default state
     D->>J: decide(state, questions)
-    J->>API: POST /v1/systemone with model and bearer key
+    J->>API: POST <base-url>/v1/systemone with model and optional bearer key
     API-->>J: JSON response
     J->>J: map answer nodes to local records
     J-->>D: DecisionResponse
@@ -94,4 +96,4 @@ All DTOs are nested in `DecisionPrimitives`. The interface is a future extension
 
 ## Tests and learnings
 
-`mvn -pl ai-decision -am test` runs `JevDecisionClientContractTests` (mocked HTTP request/response mapping, fallback parsing, non-2xx, invalid JSON, timeout), `DecisionControllerTests` (context, ping, empty-question rejection), and `DecisionPrimitivesTest` (record fields and state copying). There is no real-provider test. The key learning is to distinguish verified adapter behavior (covered by mock contract tests) from unverified provider portability/calibration. See [ADR-0003](../docs/adr/0003-decision-model-integration.md).
+`./mvnw -pl ai-decision -am test` runs `JevDecisionClientContractTests` (mocked HTTP request/response mapping, aliases, validation failures, non-2xx, invalid JSON, timeout), `DecisionControllerTests` (context, ping, validation, success, 502/504 mapping with a stubbed client), `DecisionPropertiesTest` (defaults and invalid config), and `DecisionPrimitivesTest` (record fields and state copying). There is no real-provider test. The key learning is to distinguish verified adapter behavior (covered by mock contract tests) from unverified provider portability/calibration. See [ADR-0003](../docs/adr/0003-decision-model-integration.md).

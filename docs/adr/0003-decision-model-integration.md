@@ -12,11 +12,11 @@ Use `DecisionProperties` and WebClient for base URL, key, model, and timeout. Th
 
 ## Implementation qualifications
 
-- Only one client component exists. `ai.decision.provider` does not select beans; adding providers requires explicit bean-selection wiring.
-- `/v1/systemone`, default endpoint/model, and answer-field aliases are current adapter assumptions. The MockWebServer tests in `ai-decision/src/test/java/dev/prasadgaikwad/springaiapps/decision/JevDecisionClientContractTests.java` verify request/response mapping against those assumed aliases; they are local mock-HTTP checks, not live vendor verification or calibration evidence.
+- Only one client component exists. `ai.decision.provider` is validated as `jev` at startup but does not select beans; adding providers requires explicit bean-selection wiring.
+- `/v1/systemone`, default endpoint/model, and answer-field aliases are current adapter assumptions. The adapter appends the path to any configured base URL path rather than discarding it. The MockWebServer tests in `ai-decision/src/test/java/dev/prasadgaikwad/springaiapps/decision/JevDecisionClientContractTests.java` verify request/response mapping against those assumed aliases; they are local mock-HTTP checks, not live vendor verification or calibration evidence.
 - Local Noul means a null/none answer with reason/probability. Its external-provider semantics require confirmation.
-- Default tests cover context/startup, ping, empty questions, and DTO fields/state copy. The MockWebServer contract tests additionally cover request path/headers/body, Choice/Score/Noul parsing and fallbacks, blank/missing payloads, non-2xx, invalid JSON, and timeout. They verify the adapter's assumed contract only; live Jev endpoint semantics, response formats, and calibration remain unverified. A REST-level success/failure seam with a stubbed `DecisionClient` is still absent.
-- Answer parsing is permissive (including probability default 1.0); validation, retries, and provider-specific error mapping remain gaps, not accepted guarantees.
+- Default tests cover context/startup, ping, validation, DTO fields/state copy, and REST success plus 502/504 mapping with a stubbed `DecisionClient`. The MockWebServer contract tests additionally cover request path/headers/body, Choice/Score/Noul parsing and aliases, strict answer identity/range checks, malformed payloads, non-2xx, invalid JSON, and timeout. They verify the adapter's assumed contract only; live Jev endpoint semantics, response formats, and calibration remain unverified.
+- Answer parsing keeps narrow input aliases and defaults (missing probability 1.0, missing score 0) but rejects malformed identity, unknown types, and invalid numbers. Provider failures map to shared 502/504 errors without echoing response bodies. Retries and live-provider calibration remain gaps, not accepted guarantees.
 
 ## Spring AI 2.1 `DecisionModel` evaluation (issue #46)
 
@@ -24,7 +24,7 @@ Spring AI 2.1 adds `DecisionModel`, `SystemOneDecisionModel`, and `OllamaDecisio
 
 - **Noul has no standard answer type.** The official `SystemOneDecisionMapper` converts a TypeSafe `NoulAnswer` into a `YesNoAnswer` carrying the probability. The Noul reason and its "no valid choice applies" meaning are lost.
 - **Score semantics differ.** The standard `ScoreQuestion` is an ordered set of levels and its answer carries per-level probabilities. The local answer is an arbitrary numeric score with one probability. A mapping has to invent levels or change the public contract.
-- **The contracts would change.** `DecisionModel` returns a map keyed by question name and validates answer types; the local API returns a flat `questionId`-keyed list and is deliberately permissive. The standard providers also replace much of the `ai.decision.*` configuration with provider starters, a `TypeSafeClient`, or provider-specific properties.
+- **The contracts would change.** `DecisionModel` returns a map keyed by question name and validates answer types; the local API returns a flat `questionId`-keyed list with its own narrow validation rules. The standard providers also replace much of the `ai.decision.*` configuration with provider starters, a `TypeSafeClient`, or provider-specific properties.
 
 Keep the current `DecisionClient` seam, `JevDecisionClient`, `DecisionPrimitives`, and `ai.decision.*` contract. Any future wrapper around `DecisionModel` must preserve Noul and Score semantics, keep the REST/property contract or introduce an explicit breaking change, and be recorded as a new or superseding decision. The spike evidence and comparison matrix are in the [evaluation](../spikes/46-decision-model-evaluation.md).
 

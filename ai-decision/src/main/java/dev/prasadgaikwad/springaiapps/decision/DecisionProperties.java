@@ -1,8 +1,9 @@
 package dev.prasadgaikwad.springaiapps.decision;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.time.Duration;
+import java.util.Locale;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Configuration for the decision model client (Jev/SystemOne).
@@ -19,6 +20,12 @@ public record DecisionProperties(
         if (provider == null || provider.isBlank()) {
             provider = "jev";
         }
+        else {
+            provider = provider.trim().toLowerCase(Locale.ROOT);
+        }
+        if (!"jev".equals(provider)) {
+            throw new IllegalArgumentException("Unsupported ai.decision.provider: " + provider);
+        }
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://api.typesafe.ai";
         }
@@ -27,6 +34,9 @@ public record DecisionProperties(
         }
         if (timeout == null) {
             timeout = Duration.ofSeconds(10);
+        }
+        else if (timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalArgumentException("ai.decision.timeout must be positive");
         }
     }
 }

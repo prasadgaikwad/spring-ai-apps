@@ -73,7 +73,7 @@ flowchart LR
     Props[ai.decision properties] --> Adapter[Single JevDecisionClient]
 ```
 
-Only the branch for the active chat profile is primary. Other starters can still construct unused beans; placeholders avoid startup key validation but cannot authorize real requests. Use one chat profile at a time. Media resolution is by interface bean availability rather than chat-profile dispatch. Embedding compatibility is a persisted-data constraint, including model and vector dimensions; Anthropic has no shared primary embedding alias. The decision `provider` string is not a dispatch mechanism. See [ADR-0001](adr/0001-provider-portability-profiles-ollama-default.md).
+Only the branch for the active chat profile is primary. Other starters can still construct unused beans; placeholders avoid startup key validation but cannot authorize real requests. Use one chat profile at a time. Media resolution is by interface bean availability rather than chat-profile dispatch. Embedding compatibility is a persisted-data constraint, including model and vector dimensions; Anthropic has no shared primary embedding alias. The decision `provider` string is validated as `jev` but is not a dispatch mechanism. See [ADR-0001](adr/0001-provider-portability-profiles-ollama-default.md).
 
 A separate opt-in `security` profile in `ai-common` registers a servlet filter requiring API key or Basic auth for `POST /api/**`, denies cross-origin requests unless allowlisted, and rate-limits those POSTs. The same profile disables springdoc and reduces actuator exposure. It is additive to a chat profile and is off by default; see the root [README](../README.md) for the local-only posture and configuration keys.
 
@@ -88,7 +88,7 @@ A separate opt-in `security` profile in `ai-common` registers a servlet filter r
 | ai-observability | `ObservabilityController`, `DuckDbObservationHandler`, `TraceSpanRepository` | In-process observations/manual spans to embedded DuckDB; filtered queries | [Guide and class diagram](../ai-observability/README.md) |
 | ai-multimodal | `MultimodalController`, `MultimodalService` | Image model, chat with image media, TTS bytes, transcription bytes | [Guide and flow](../ai-multimodal/README.md) |
 | ai-structured | `StructuredController`, `StructuredExtractionService`, `ExtractionService` | Select target → entity conversion → Jakarta validation → value/violations | [Guide and types](../ai-structured/README.md) |
-| ai-decision | `DecisionController`, `DecisionClient`, `JevDecisionClient` | Map state/questions to HTTP JSON and permissively parse typed answers | [Guide and types](../ai-decision/README.md) |
+| ai-decision | `DecisionController`, `DecisionClient`, `JevDecisionClient` | Map state/questions to HTTP JSON and validate typed answer identity/ranges | [Guide and types](../ai-decision/README.md) |
 
 ## 5. API inventory and errors
 
@@ -132,7 +132,7 @@ The shared Eval harness creates immutable list copies and deterministic grades; 
 | ai-observability | DuckDB insert/query REST and tag/record tests; automatic handler correlation/timing/error tests; context | Distributed trace-context propagation or cross-JVM collection |
 | ai-multimodal | Mock-backed contracts for all four modalities, option mapping (dimensions/voice/format/speed/MIME-derived transcription filenames), revised-prompt metadata, and invalid input | Codec compatibility, live vision quality, provider support for dimensions/voices/formats |
 | ai-structured | Mock-backed REST conversion/validation; record constraints; context | Factual extraction accuracy or every provider's strict-schema support |
-| ai-decision | DTO fields/state copy; context/ping/empty questions; MockWebServer contract tests for request/response mapping, documented fallbacks, non-2xx, invalid JSON, and timeout | Live vendor contract/endpoint semantics, calibrated probabilities, provider portability, and standard `DecisionModel` interoperability |
+| ai-decision | DTO fields/state copy; context/ping/validation; stubbed-client REST success and 502/504 mapping; MockWebServer contract tests for request/response mapping, aliases, identity/range validation, non-2xx, invalid JSON, and timeout | Live vendor contract/endpoint semantics, calibrated probabilities, provider portability, and standard `DecisionModel` interoperability |
 
 Run `mvn test` for the whole reactor; Docker is required for RAG Testcontainers. They provision their own database rather than using Compose. Named ChatModel mocks should stub `getOptions()` before constructing clients. See [implementation learnings](learnings/implementation-learnings.md) for pitfalls and [root run instructions](../README.md) for prerequisite installation.
 
