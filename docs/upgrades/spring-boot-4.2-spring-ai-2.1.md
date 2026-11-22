@@ -4,6 +4,10 @@
 
 Tracking issue: [#36](https://github.com/prasadgaikwad/spring-ai-apps/issues/36).
 
+## Follow-up dependency refresh (2026-11-21)
+
+Issues [#68](https://github.com/prasadgaikwad/spring-ai-apps/issues/68)–[#72](https://github.com/prasadgaikwad/spring-ai-apps/issues/72) refreshed low-risk build/test dependencies without changing Boot or Spring AI pins: the below-Boot Testcontainers override was removed (Boot manages `2.0.5`), MockWebServer moved to `5.5.1`, error-prone annotations to `2.53.0`, the Maven wrapper distribution to `3.9.16`, and CI actions to `checkout@v7` / `setup-java@v6`. Higher-risk candidates are tracked separately in #73–#77; springdoc remains `3.2.0` here.
+
 ## Release status
 
 Snapshot refreshed **2026-11-20** from Maven Central metadata and the GA announcements:
@@ -13,7 +17,7 @@ Snapshot refreshed **2026-11-20** from Maven Central metadata and the GA announc
 | Spring Boot | `4.1.2` | `4.2.0` | GA announced 2026-11-19. |
 | Spring AI | `2.0.2` | `2.1.0` | GA announced 2026-11-20; built on Boot 4.2. |
 | springdoc | `3.2.0` | `3.2.0` | No bump needed; compatibility verified against Boot 4.2 / Spring Framework 7.1 in this upgrade. |
-| Testcontainers | `2.0.3` | `2.0.3` | Unchanged; the existing PGVector tests still use this pin. |
+| Testcontainers | `2.0.3` | `2.0.5` | The GA upgrade kept `2.0.3`; follow-up #68 removed the explicit BOM override so Boot `4.2.0` manages `2.0.5`. |
 
 Spring AI `2.1.0` GA is built on Spring Boot `4.2` and moves the related SDKs forward:
 
@@ -84,7 +88,7 @@ Spring Boot 4.2.0 GA
 Spring AI 2.1.0 GA
 springdoc 3.2.0 (verified against Boot 4.2 / Spring Framework 7.1)
 Java 25
-Testcontainers 2.0.3 (unchanged)
+Testcontainers 2.0.5 (Boot-managed; follow-up #68)
 ```
 
 Spring AI 2.1 tracks Boot 4.2, and the MCP/Anthropic SDK changes are part of that pairing. No Boot-only or Spring AI-only bump was merged.
