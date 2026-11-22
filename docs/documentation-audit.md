@@ -73,7 +73,7 @@ This section supersedes claims in the frozen snapshot above; the original text a
 
 This section records the P3 cleanup tranche; the frozen validation figures above are not rewritten.
 
-- **Dependency boundaries**: `ai-common` depends on the Spring AI model API and web infrastructure only. The six chat demos declare their own provider starters; `ai-decision` has no `ChatModel` beans, asserted by `DecisionControllerTests`. DuckDB JDBC `1.1.3` and MockWebServer `4.12.0` are pinned in root `dependencyManagement`.
+- **Dependency boundaries**: `ai-common` depends on the Spring AI model API and web infrastructure only. The six chat demos declare their own provider starters; `ai-decision` has no `ChatModel` beans, asserted by `DecisionControllerTests`. DuckDB JDBC `1.1.3` and MockWebServer `5.5.1` are pinned in root `dependencyManagement`; Testcontainers is managed by the Boot BOM (`2.0.5`).
 - **CI checks**: Enforcer rules (Java/Maven versions and dependency convergence) run through `validate`; `dependency:analyze` is a non-failing report because Boot starters intentionally expose transitive APIs.
 - **Eval generation**: blank answers use a per-run fixed pool capped by `ai.eval.generation-concurrency` (default `4` in source and YAML); `EvalRunServiceConcurrencyTest` verifies the cap and input-order preservation with a mocked ChatModel.
 - **Observation lifecycle**: `DuckDbObservationHandler` uses weak-key state and a stop-without-start regression test. `TraceSpanSink` is an async single writer; REST writes flush before responding and shutdown flushes too. The redundant read-after-write is gone, service name comes from `ai.observability.service-name`, and the inert `management.tracing.*` keys were removed from YAML/README.
@@ -86,9 +86,17 @@ These changes are local mock/infrastructure verification only. No live provider,
 
 This section supersedes the earlier pin and planning notes; the frozen validation figures above are not rewritten.
 
-- **Version pins**: root `pom.xml` pins Boot `4.2.0` / Spring AI `2.1.0`, with `springdoc` unchanged at `3.2.0`, Testcontainers at `2.0.3`, and Java 25. ADR-0002 keeps `4.1.1` / `2.0.1` only as the original baseline.
+- **Version pins**: root `pom.xml` pins Boot `4.2.0` / Spring AI `2.1.0`, with `springdoc` unchanged at `3.2.0` and Java 25. The follow-up dependency refresh (#68–#72) removed the below-Boot Testcontainers override (Boot manages `2.0.5`), bumped MockWebServer to `5.5.1` and error-prone annotations to `2.53.0`, moved the Maven wrapper distribution to `3.9.16`, and updated CI actions to `checkout@v7` / `setup-java@v6`. ADR-0002 keeps `4.1.1` / `2.0.1` only as the original baseline.
 - **Upgrade record**: [Spring Boot 4.2 / Spring AI 2.1](upgrades/spring-boot-4.2-spring-ai-2.1.md) changed from an RC plan to a GA upgrade record. Parent and BOM moved together; Enforcer convergence and compile passed with no suppressions.
 - **springdoc gate**: app-context tests in all seven modules now assert both `/v3/api-docs` and `/swagger-ui/index.html`. They pass on Boot 4.2 / Framework 7.1 with springdoc `3.2.0`; no dependency bump was needed.
 - **Dependency tree**: Spring AI `2.1.0` resolves MCP SDK `2.2.0` and Anthropic SDK `3.8.0`. `spring-ai-systemone` and `spring-ai-autoconfigure-model-chat-memory` remain on the six chat demos; `ai-decision` still has no `ChatModel` beans.
 - **Unchanged boundaries**: `DecisionClient`/`ai.decision.*`, disabled MCP defaults, and the #47 no-session-migration decision were not altered. The `getDefaultOptions()` stubs touched by the upgrade now use `getOptions()`.
 - **Verification limits**: the no-Docker reactor tests pass locally (176 tests); PGVector/Testcontainers coverage passed in CI run `44836550600` (`docker-integration`). Live OpenAI/Anthropic/Ollama and Jev calls, MCP peer connections, and modern MCP adoption remain untested or out of scope.
+
+## Post-dependency refresh (#68–#72)
+
+This low-risk tranche changes only build/test dependencies and CI tooling; Boot, Spring AI, springdoc, and all feature defaults are unchanged.
+
+- **Pins**: Testcontainers uses the Boot-managed `2.0.5` (verified in the `ai-rag` dependency tree); MockWebServer is `5.5.1`; error-prone annotations are `2.53.0`; the Maven wrapper distribution is `3.9.16`; CI uses `checkout@v7` / `setup-java@v6`.
+- **Local checks**: `./mvnw -version` reports Maven `3.9.16`; `./mvnw -B -DskipTests compile` and Enforcer convergence passed; `./mvnw -B test -DexcludedGroups=docker -Dsurefire.failIfNoSpecifiedTests=false` passed 176 tests with no failures; `dependency:analyze` and `git diff --check` passed.
+- **Limitations**: PGVector/Testcontainers coverage and the new CI action versions are validated by the PR's `docker-integration` and `build` jobs, not locally. The existing `ChatClient.toolCallbacks(...)` deprecation warning remains and is out of scope. Higher-risk upgrades stay open in #73–#77.
