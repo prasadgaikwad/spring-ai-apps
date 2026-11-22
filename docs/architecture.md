@@ -57,7 +57,7 @@ flowchart BT
     Demo --> Ollama[Ollama / OpenAI / Anthropic starters declared per chat demo]
 ```
 
-The parent pins Boot 4.2.0, Spring AI 2.1.0, Java 25, springdoc 3.2.1, DuckDB JDBC 1.1.3, and MockWebServer 5.5.1; Testcontainers 2.0.5 comes from the Boot BOM. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`. The [Spring Boot 4.2 / Spring AI 2.1 upgrade](upgrades/spring-boot-4.2-spring-ai-2.1.md) records the GA bump, and the [springdoc 3.2.1 upgrade](upgrades/springdoc-3.2.1.md) records the Swagger 3 / Jackson decision and verification limits.
+The parent pins Boot 4.2.0, Spring AI 2.1.0, Java 25, springdoc 3.2.1, DuckDB JDBC 2.0.1.0, and MockWebServer 5.5.1; Testcontainers 2.0.5 comes from the Boot BOM. Java packages use `dev.prasadgaikwad.springaiapps`; Maven coordinates use `dev.prasadgaikwad.spring-ai-apps`. The [Spring Boot 4.2 / Spring AI 2.1 upgrade](upgrades/spring-boot-4.2-spring-ai-2.1.md) records the GA bump, and the [springdoc 3.2.1 upgrade](upgrades/springdoc-3.2.1.md) records the Swagger 3 / Jackson decision and verification limits.
 
 Shared code is configuration/error translation, the Spring AI model API, and `common.eval`, not a shared persistence or business-service layer. Six Spring AI demos declare provider starters; `ai-decision` uses WebClient with no `ChatModel` beans and separate configuration. Shared configuration is discovered through the demo's component scan. No shared prompt-template library currently exists despite the original intended scope.
 
@@ -116,7 +116,7 @@ UI `/chat` belongs independently to RAG and agents and calls the respective feat
 | RAG chunks and vectors | PGVector, default `vector_store` table | Compose volume persists; deterministic IDs upsert identical chunks; no obsolete-chunk deletion |
 | RAG keyword index expression | SQL over PGVector `content` | English full-text semantics; same table, no separate search service |
 | Eval history | Bounded, synchronized in-memory `LinkedHashMap` | Process-local/not durable; `ai.eval.max-runs` (default 100) evicts oldest; reset via `DELETE /api/eval/runs`; case IDs depend on pair position; blank answers generated with `ai.eval.generation-concurrency` (default 4) and restored to input order |
-| Observation spans | DuckDB `trace_spans` | Stable file path persists; async single-writer sink flushes on REST write/shutdown; retention prunes by start time; no migration framework; automatic spans use generated in-process trace/span IDs, start/stop timing, and ERROR status; manual inserts keep caller IDs |
+| Observation spans | DuckDB `trace_spans` | Stable file path persists; DuckDB JDBC `2.0.1.0` can read 1.1.x files but 1.1.x cannot read files after 2.0 writes, so back up before first 2.0 write; async single-writer sink flushes on REST write/shutdown; retention prunes by start time; no migration framework; automatic spans use generated in-process trace/span IDs, start/stop timing, and ERROR status; manual inserts keep caller IDs |
 | Agent conversations | No application conversation store | Each request is independent; conditional session-memory plan: [issue #47](plans/47-session-memory-migration.md), not implemented |
 | Structured/media/decision results | Returned by request | No application persistence implemented |
 

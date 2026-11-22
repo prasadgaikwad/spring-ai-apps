@@ -73,7 +73,7 @@ This section supersedes claims in the frozen snapshot above; the original text a
 
 This section records the P3 cleanup tranche; the frozen validation figures above are not rewritten.
 
-- **Dependency boundaries**: `ai-common` depends on the Spring AI model API and web infrastructure only. The six chat demos declare their own provider starters; `ai-decision` has no `ChatModel` beans, asserted by `DecisionControllerTests`. DuckDB JDBC `1.1.3` and MockWebServer `5.5.1` are pinned in root `dependencyManagement`; Testcontainers is managed by the Boot BOM (`2.0.5`).
+- **Dependency boundaries**: `ai-common` depends on the Spring AI model API and web infrastructure only. The six chat demos declare their own provider starters; `ai-decision` has no `ChatModel` beans, asserted by `DecisionControllerTests`. DuckDB JDBC `2.0.1.0` and MockWebServer `5.5.1` are pinned in root `dependencyManagement`; Testcontainers is managed by the Boot BOM (`2.0.5`).
 - **CI checks**: Enforcer rules (Java/Maven versions and dependency convergence) run through `validate`; `dependency:analyze` is a non-failing report because Boot starters intentionally expose transitive APIs.
 - **Eval generation**: blank answers use a per-run fixed pool capped by `ai.eval.generation-concurrency` (default `4` in source and YAML); `EvalRunServiceConcurrencyTest` verifies the cap and input-order preservation with a mocked ChatModel.
 - **Observation lifecycle**: `DuckDbObservationHandler` uses weak-key state and a stop-without-start regression test. `TraceSpanSink` is an async single writer; REST writes flush before responding and shutdown flushes too. The redundant read-after-write is gone, service name comes from `ai.observability.service-name`, and the inert `management.tracing.*` keys were removed from YAML/README.
@@ -107,3 +107,9 @@ This low-risk tranche changes only build/test dependencies and CI tooling; Boot,
 - **Jackson decision**: springdoc/swagger-core use Jackson 3 (`tools.jackson`) for OpenAPI generation. `ai-decision` and `ai-observability` declare Boot-managed Jackson 2 (`jackson-databind`, `jackson-datatype-jsr310`) explicitly for their isolated Jev payload and DuckDB tag mapping; no application code moved to Jackson 3.
 - **Classpath check**: `dependency:tree -Dincludes=io.swagger.core.v3:*` shows only `3.0.0` Swagger artifacts on every module; no `swagger-annotations-jakarta` remains.
 - **Local checks**: compile/Enforcer convergence passed; the no-Docker reactor suite passed 176 tests, including `/v3/api-docs` and `/swagger-ui/index.html` assertions in all seven REST modules. No live provider or MCP peer calls were made.
+
+## Post-DuckDB refresh (#74)
+
+- **Pin and scope**: root `dependencyManagement` moves DuckDB JDBC to `2.0.1.0`; `dependency:tree` shows the driver only on `ai-observability` and its `ai-common` prerequisite. No default path, schema, or sink wiring changed.
+- **Compatibility behavior**: DuckDB 2.0 reads 1.1.x files, but 1.1.x cannot read files after a 2.0 write. `ai-observability/README.md` documents the stop/copy/start/verify/do-not-downgrade procedure for the default user-home file; `DuckDbConfigTest` checks file-backed persistence with a temporary nested path, not a real legacy file.
+- **Local checks**: `ai-observability` tests pass (20 tests, including the new file-backed check) and the full non-Docker reactor suite passes. No external database or live provider was used.
