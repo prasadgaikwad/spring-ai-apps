@@ -11,6 +11,19 @@ mvn -pl ai-observability spring-boot:run
 
 No external database is needed. `trace.duckdb.url` defaults to `jdbc:duckdb:${user.home}/.spring-ai-apps/ai-observability/traces.duckdb`, so the file is stable regardless of the application's working directory. `DuckDbConfig` creates parent directories and initializes `trace_spans` plus indexes on `trace_id`, `name`, and `start_time`. Override the property (or `TRACE_DUCKDB_URL`) to choose a different file. File-backed storage survives restart. `trace.duckdb.retention-days` (default `7`, override `TRACE_DUCKDB_RETENTION_DAYS`) deletes spans older than the cutoff at startup and after writes; there is no migration framework, so schema changes require manual handling.
 
+### Upgrading an existing trace file to DuckDB 2.0
+
+The module now uses DuckDB JDBC `2.0.1.0`. DuckDB 2.0 can read files written by 1.1.x, but 1.1.x cannot read files after 2.0 has written to them. Before starting this version against an existing default file:
+
+1. Stop all processes that have `~/.spring-ai-apps/ai-observability/traces.duckdb` open.
+2. Copy `traces.duckdb` and any sibling `traces.duckdb.wal` file to a backup directory.
+3. Start `ai-observability` normally. `CREATE TABLE IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` keep the existing `trace_spans` schema; no data rewrite is performed by this upgrade.
+4. Query `GET /api/observability/spans` to confirm the existing spans are visible.
+5. Do not downgrade the driver against the upgraded file; restore the backup instead if rollback is needed.
+
+`DuckDbConfigTest.fileBackedDatabasePersistsSpansAcrossDataSources` checks the file-backed lifecycle with a temporary nested path. It does not exercise a real 1.1.x file; step 2 above is the user-managed safety step.
+
+
 The six-demo chat-profile configuration is present, but these span APIs do not themselves invoke a ChatModel. The POM includes Actuator and Micrometer APIs, but YAML no longer enables `management.tracing.*` or exposes `traces`: there is no W3C trace-context bridge and no `/actuator/traces`. Health/info/metrics remain available under `/actuator`. Use the module's explicit span/trace REST contract below for stored observations.
 
 ## Public API
@@ -81,4 +94,4 @@ This is **in-process observation correlation, not distributed tracing**. Microme
 
 ## Tests and learnings
 
-`mvn -pl ai-observability -am test` covers manual REST insert/query, required fields, tag serialization/immutability, context loading using DuckDB, configured service name, retention pruning, and automatic handler parent/child correlation, start-to-stop timing, error status, and a stop-without-start regression. It does not establish distributed trace-context propagation or cross-process collection. See [implementation learnings](../docs/learnings/implementation-learnings.md).
+`mvn -pl ai-observability -am test` covers manual REST insert/query, required fields, tag serialization/immutability, context loading using DuckDB, configured service name, retention pruning, file-backed persistence across data sources, and automatic handler parent/child correlation, start-to-stop timing, error status, and a stop-without-start regression. It does not establish distributed trace-context propagation or cross-process collection. See [implementation learnings](../docs/learnings/implementation-learnings.md).
