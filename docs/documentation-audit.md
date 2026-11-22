@@ -86,17 +86,24 @@ These changes are local mock/infrastructure verification only. No live provider,
 
 This section supersedes the earlier pin and planning notes; the frozen validation figures above are not rewritten.
 
-- **Version pins**: root `pom.xml` pins Boot `4.2.0` / Spring AI `2.1.0`, with `springdoc` unchanged at `3.2.0` and Java 25. The follow-up dependency refresh (#68–#72) removed the below-Boot Testcontainers override (Boot manages `2.0.5`), bumped MockWebServer to `5.5.1` and error-prone annotations to `2.53.0`, moved the Maven wrapper distribution to `3.9.16`, and updated CI actions to `checkout@v7` / `setup-java@v6`. ADR-0002 keeps `4.1.1` / `2.0.1` only as the original baseline.
+- **Version pins**: root `pom.xml` pins Boot `4.2.0` / Spring AI `2.1.0`, with `springdoc` now at `3.2.1` (upgraded in #73) and Java 25. The follow-up dependency refresh (#68–#72) removed the below-Boot Testcontainers override (Boot manages `2.0.5`), bumped MockWebServer to `5.5.1` and error-prone annotations to `2.53.0`, moved the Maven wrapper distribution to `3.9.16`, and updated CI actions to `checkout@v7` / `setup-java@v6`. ADR-0002 keeps `4.1.1` / `2.0.1` only as the original baseline.
 - **Upgrade record**: [Spring Boot 4.2 / Spring AI 2.1](upgrades/spring-boot-4.2-spring-ai-2.1.md) changed from an RC plan to a GA upgrade record. Parent and BOM moved together; Enforcer convergence and compile passed with no suppressions.
-- **springdoc gate**: app-context tests in all seven modules now assert both `/v3/api-docs` and `/swagger-ui/index.html`. They pass on Boot 4.2 / Framework 7.1 with springdoc `3.2.0`; no dependency bump was needed.
+- **springdoc gate**: app-context tests in all seven modules now assert both `/v3/api-docs` and `/swagger-ui/index.html`. They pass on Boot 4.2 / Framework 7.1; springdoc was `3.2.0` at GA time and is now `3.2.1` after #73.
 - **Dependency tree**: Spring AI `2.1.0` resolves MCP SDK `2.2.0` and Anthropic SDK `3.8.0`. `spring-ai-systemone` and `spring-ai-autoconfigure-model-chat-memory` remain on the six chat demos; `ai-decision` still has no `ChatModel` beans.
 - **Unchanged boundaries**: `DecisionClient`/`ai.decision.*`, disabled MCP defaults, and the #47 no-session-migration decision were not altered. The `getDefaultOptions()` stubs touched by the upgrade now use `getOptions()`.
 - **Verification limits**: the no-Docker reactor tests pass locally (176 tests); PGVector/Testcontainers coverage passed in CI run `44836550600` (`docker-integration`). Live OpenAI/Anthropic/Ollama and Jev calls, MCP peer connections, and modern MCP adoption remain untested or out of scope.
 
 ## Post-dependency refresh (#68–#72)
 
-This low-risk tranche changes only build/test dependencies and CI tooling; Boot, Spring AI, springdoc, and all feature defaults are unchanged.
+This low-risk tranche changes only build/test dependencies and CI tooling; Boot, Spring AI, and all feature defaults are unchanged. It left springdoc at `3.2.0`, which was upgraded separately in #73.
 
 - **Pins**: Testcontainers uses the Boot-managed `2.0.5` (verified in the `ai-rag` dependency tree); MockWebServer is `5.5.1`; error-prone annotations are `2.53.0`; the Maven wrapper distribution is `3.9.16`; CI uses `checkout@v7` / `setup-java@v6`.
 - **Local checks**: `./mvnw -version` reports Maven `3.9.16`; `./mvnw -B -DskipTests compile` and Enforcer convergence passed; `./mvnw -B test -DexcludedGroups=docker -Dsurefire.failIfNoSpecifiedTests=false` passed 176 tests with no failures; `dependency:analyze` and `git diff --check` passed.
-- **Limitations**: PGVector/Testcontainers coverage and the new CI action versions are validated by the PR's `docker-integration` and `build` jobs, not locally. The existing `ChatClient.toolCallbacks(...)` deprecation warning remains and is out of scope. Higher-risk upgrades stay open in #73–#77.
+- **Limitations**: PGVector/Testcontainers coverage and the new CI action versions are validated by the PR's `docker-integration` and `build` jobs, not locally. The existing `ChatClient.toolCallbacks(...)` deprecation warning remains and is out of scope. Higher-risk upgrades #73–#77 are tracked separately.
+
+## Post-springdoc refresh (#73, #76)
+
+- **Pins**: springdoc `3.2.1`, swagger-annotations/models/core `3.0.0`, swagger-ui `5.35.1`; the retired `swagger-annotations-jakarta` artifact is excluded centrally in root `dependencyManagement` for `spring-ai-model` and `spring-ai-client-chat`. See [the upgrade note](upgrades/springdoc-3.2.1.md) for the Jackson decision.
+- **Jackson decision**: springdoc/swagger-core use Jackson 3 (`tools.jackson`) for OpenAPI generation. `ai-decision` and `ai-observability` declare Boot-managed Jackson 2 (`jackson-databind`, `jackson-datatype-jsr310`) explicitly for their isolated Jev payload and DuckDB tag mapping; no application code moved to Jackson 3.
+- **Classpath check**: `dependency:tree -Dincludes=io.swagger.core.v3:*` shows only `3.0.0` Swagger artifacts on every module; no `swagger-annotations-jakarta` remains.
+- **Local checks**: compile/Enforcer convergence passed; the no-Docker reactor suite passed 176 tests, including `/v3/api-docs` and `/swagger-ui/index.html` assertions in all seven REST modules. No live provider or MCP peer calls were made.

@@ -6,7 +6,7 @@ Tracking issue: [#36](https://github.com/prasadgaikwad/spring-ai-apps/issues/36)
 
 ## Follow-up dependency refresh (2026-11-21)
 
-Issues [#68](https://github.com/prasadgaikwad/spring-ai-apps/issues/68)–[#72](https://github.com/prasadgaikwad/spring-ai-apps/issues/72) refreshed low-risk build/test dependencies without changing Boot or Spring AI pins: the below-Boot Testcontainers override was removed (Boot manages `2.0.5`), MockWebServer moved to `5.5.1`, error-prone annotations to `2.53.0`, the Maven wrapper distribution to `3.9.16`, and CI actions to `checkout@v7` / `setup-java@v6`. Higher-risk candidates are tracked separately in #73–#77; springdoc remains `3.2.0` here.
+Issues [#68](https://github.com/prasadgaikwad/spring-ai-apps/issues/68)–[#72](https://github.com/prasadgaikwad/spring-ai-apps/issues/72) refreshed low-risk build/test dependencies without changing Boot or Spring AI pins: the below-Boot Testcontainers override was removed (Boot manages `2.0.5`), MockWebServer moved to `5.5.1`, error-prone annotations to `2.53.0`, the Maven wrapper distribution to `3.9.16`, and CI actions to `checkout@v7` / `setup-java@v6`. Higher-risk candidates are tracked separately in #73–#77; this tranche left springdoc at `3.2.0`, which was upgraded to `3.2.1` in #73.
 
 ## Release status
 
@@ -16,7 +16,7 @@ Snapshot refreshed **2026-11-20** from Maven Central metadata and the GA announc
 | --- | --- | --- | --- |
 | Spring Boot | `4.1.2` | `4.2.0` | GA announced 2026-11-19. |
 | Spring AI | `2.0.2` | `2.1.0` | GA announced 2026-11-20; built on Boot 4.2. |
-| springdoc | `3.2.0` | `3.2.0` | No bump needed; compatibility verified against Boot 4.2 / Spring Framework 7.1 in this upgrade. |
+| springdoc | `3.2.0` | `3.2.0` at GA; `3.2.1` after #73 | GA compatibility verified here; the later security bump is recorded in [the springdoc 3.2.1 note](springdoc-3.2.1.md). |
 | Testcontainers | `2.0.3` | `2.0.5` | The GA upgrade kept `2.0.3`; follow-up #68 removed the explicit BOM override so Boot `4.2.0` manages `2.0.5`. |
 
 Spring AI `2.1.0` GA is built on Spring Boot `4.2` and moves the related SDKs forward:
@@ -86,7 +86,7 @@ The delivered target is a matched pair, not a one-component bump:
 ```text
 Spring Boot 4.2.0 GA
 Spring AI 2.1.0 GA
-springdoc 3.2.0 (verified against Boot 4.2 / Spring Framework 7.1)
+springdoc 3.2.0 at GA (verified against Boot 4.2 / Spring Framework 7.1); 3.2.1 after #73
 Java 25
 Testcontainers 2.0.5 (Boot-managed; follow-up #68)
 ```
