@@ -126,6 +126,7 @@ CI runs on every push and pull request with Temurin 25 and the Maven wrapper. It
 These are time-bound notes; only the upgrade record describes a shipped dependency change, while the spikes and plans remain evaluations rather than current API contracts:
 
 - [Spring Boot 4.2 / Spring AI 2.1 upgrade](docs/upgrades/spring-boot-4.2-spring-ai-2.1.md) — GA upgrade completed; parent pins Boot 4.2.0 / Spring AI 2.1.0
+- [springdoc 3.2.1 upgrade](docs/upgrades/springdoc-3.2.1.md) — Swagger 3 / Jackson 3 migration and the Swagger UI security fix
 - [MCP `MODERN` protocol spike (#45)](docs/spikes/45-mcp-modern-protocol.md) — spike complete; recommendation is to defer adoption
 - [Spring AI `DecisionModel` evaluation (#46)](docs/spikes/46-decision-model-evaluation.md) — evaluation complete; keep the custom Jev adapter
 - [Session-memory migration plan (#47)](docs/plans/47-session-memory-migration.md) — conditional and not applicable today; no migration implemented

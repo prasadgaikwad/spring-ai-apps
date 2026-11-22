@@ -33,7 +33,8 @@
     <properties>
         <java.version>25</java.version>
         <spring-ai.version>2.1.0</spring-ai.version>
-        <springdoc.version>3.2.0</springdoc.version>
+        <springdoc.version>3.2.1</springdoc.version>
+        <swagger.version>3.0.0</swagger.version>
         <maven.compiler.release>25</maven.compiler.release>
         <duckdb.version>1.1.3</duckdb.version>
         <mockwebserver.version>5.5.1</mockwebserver.version>
@@ -86,15 +87,33 @@
                 <artifactId>error_prone_annotations</artifactId>
                 <version>2.53.0</version>
             </dependency>
+            <!-- springdoc 3.2.1 runs on Swagger Core 3.0 / Jackson 3; the retired -jakarta artifact is excluded below. -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>2.2.50</version>
+                <version>${swagger.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations-jakarta</artifactId>
-                <version>2.2.55</version>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-model</artifactId>
+                <version>${spring-ai.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.swagger.core.v3</groupId>
+                        <artifactId>swagger-annotations-jakarta</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-client-chat</artifactId>
+                <version>${spring-ai.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.swagger.core.v3</groupId>
+                        <artifactId>swagger-annotations-jakarta</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
