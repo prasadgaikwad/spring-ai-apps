@@ -1,6 +1,6 @@
 # springdoc 3.2.1 upgrade
 
-**Status:** implemented in PR pending review. The parent now pins springdoc `3.2.1`; Spring Boot remains `4.2.0` and Spring AI remains `2.1.0`.
+**Status:** implemented in [PR #79](https://github.com/prasadgaikwad/spring-ai-apps/pull/79). The parent now pins springdoc `3.2.1`; Spring Boot remains `4.2.0` and Spring AI remains `2.1.0`.
 
 Tracking issues: [#73](https://github.com/prasadgaikwad/spring-ai-apps/issues/73) and [#76](https://github.com/prasadgaikwad/spring-ai-apps/issues/76).
 
