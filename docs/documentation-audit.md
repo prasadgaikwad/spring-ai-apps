@@ -119,3 +119,12 @@ This low-risk tranche changes only build/test dependencies and CI tooling; Boot,
 - **Pin**: root `dependencyManagement` moves `com.networknt:json-schema-validator` from `3.0.6` to `3.0.9`. The dependency tree shows `3.0.9` on all six chat demos; MCP SDK `2.2.0` asked for `3.0.8`, and Spring AI `2.1.0` asked for `3.0.1`.
 - **Behavior checks**: `ai-agents` declares the validator directly (compile scope, because Spring AI/MCP need it at runtime) and adds `ToolSchemaValidationTest`. It validates the generated `daysBetween` tool schema with validator `3.0.9`, pins the OpenAPI `nullable` semantics changed in 3.0.8, and pins the RFC 3339 `date-time` separator/offset rejection changed in 3.0.9. Current tool schemas do not emit `nullable` or `date-time`; those synthetic cases cover the transitive validator used by tool/MCP schema handling.
 - **Local checks**: Enforcer convergence, compile, `dependency:analyze`, and `git diff --check` passed; the full non-Docker reactor suite passed 180 tests with no failures/errors. No live provider or MCP peer calls were made.
+
+## Boot-managed logging/Jackson patches (#77)
+
+As of 2026-11-23 these patches are intentionally left under Boot's dependency management; issue #77 remains open for a supported Boot bump.
+
+- **Boot availability**: Maven Central's `spring-boot-starter-parent` metadata still reports `4.2.0` as both `latest` and `release` (metadata last updated 2026-11-19). No Boot `4.2.1` patch is available to adopt.
+- **Resolved vs. latest**: the Boot `4.2.0` BOM resolves Logback `1.6.6` (classic/core) and Jackson 2 `2.21.8` (databind/core), while Maven Central latest is Logback `1.6.8` and Jackson 2 `2.23.0`. These were verified in the `ai-agents` dependency tree.
+- **Deliberate non-action**: adding standalone Logback or Jackson 2 overrides would fight the pinned BOM and increase convergence risk. The parent stays at Boot `4.2.0`; the patches will be picked up when a Boot `4.2.x` release delivers them or a later planned Boot upgrade is taken.
+- **Re-check trigger**: when the supported Boot bump lands, update the parent, run Enforcer/compile/full tests and CI, then close #77 with the version evidence and job results.
