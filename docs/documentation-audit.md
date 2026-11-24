@@ -113,3 +113,9 @@ This low-risk tranche changes only build/test dependencies and CI tooling; Boot,
 - **Pin and scope**: root `dependencyManagement` moves DuckDB JDBC to `2.0.1.0`; `dependency:tree` shows the driver only on `ai-observability` and its `ai-common` prerequisite. No default path, schema, or sink wiring changed.
 - **Compatibility behavior**: DuckDB 2.0 reads 1.1.x files, but 1.1.x cannot read files after a 2.0 write. `ai-observability/README.md` documents the stop/copy/start/verify/do-not-downgrade procedure for the default user-home file; `DuckDbConfigTest` checks file-backed persistence with a temporary nested path, not a real legacy file.
 - **Local checks**: `ai-observability` tests pass (20 tests, including the new file-backed check) and the full non-Docker reactor suite passes. No external database or live provider was used.
+
+## Post-validator refresh (#75)
+
+- **Pin**: root `dependencyManagement` moves `com.networknt:json-schema-validator` from `3.0.6` to `3.0.9`. The dependency tree shows `3.0.9` on all six chat demos; MCP SDK `2.2.0` asked for `3.0.8`, and Spring AI `2.1.0` asked for `3.0.1`.
+- **Behavior checks**: `ai-agents` declares the validator directly (compile scope, because Spring AI/MCP need it at runtime) and adds `ToolSchemaValidationTest`. It validates the generated `daysBetween` tool schema with validator `3.0.9`, pins the OpenAPI `nullable` semantics changed in 3.0.8, and pins the RFC 3339 `date-time` separator/offset rejection changed in 3.0.9. Current tool schemas do not emit `nullable` or `date-time`; those synthetic cases cover the transitive validator used by tool/MCP schema handling.
+- **Local checks**: Enforcer convergence, compile, `dependency:analyze`, and `git diff --check` passed; the full non-Docker reactor suite passed 180 tests with no failures/errors. No live provider or MCP peer calls were made.
